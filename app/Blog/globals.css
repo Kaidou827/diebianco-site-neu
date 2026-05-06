@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 267 100% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 44, 31%, 74%;
+}
+
+body {
+  background-color: black;
+  color: white;
+}
+
+
+
+/* ============================= */
+/* GOLD QUESTION (FAQ / HIGHLIGHT) */
+/* ============================= */
+
+.gold-question {
+  border-left: 3px solid #d4c6a6;
+  padding: 1rem 1.25rem;
+  margin: 2.5rem 0;
+  background: linear-gradient(90deg,
+      rgba(212, 198, 166, 0.08),
+      rgba(212, 198, 166, 0.02),
+      transparent);
+}
+
+.gold-question-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #d4c6a6;
+  margin-bottom: 0.35rem;
+}
+
+.gold-question-text {
+  font-size: 1.1rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #ffffff;
+}
+
+/* ============================= */
+/* BLOG CALL TO ACTION */
+/* ============================= */
+
+.blog-cta {
+  margin: 4rem 0;
+  padding: 3rem 2.5rem;
+  text-align: center;
+
+  border-radius: 20px;
+  border: 1px solid rgba(212, 198, 166, 0.28);
+
+  background:
+    linear-gradient(180deg,
+      rgba(212, 198, 166, 0.08) 0%,
+      rgba(0, 0, 0, 0.85) 100%);
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+/* CTA Text */
+.blog-cta-text {
+  font-size: 1.3rem;
+  font-weight: 500;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* CTA Button */
+.blog-cta-button {
+  display: inline-block;
+  padding: 0.9rem 2.2rem;
+
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+
+  color: #1a1a1a;
+  background: linear-gradient(135deg,
+      #d4c6a6,
+      #bfa77c);
+
+  border-radius: 999px;
+  border: none;
+
+  box-shadow:
+    0 6px 18px rgba(212, 198, 166, 0.35);
+
+  transition: all 0.35s ease;
+}
+
+.blog-cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 30px rgba(212, 198, 166, 0.55);
+}
+
+/* ===============================
+   GOLD TYPOGRAPHY
+================================ */
+
+.text-gold {
+  color: #d4c6a6;
+  font-weight: 500;
+}
+
+/* Main Headings */
+.blog-heading-gold {
+  color: #d4c6a6;
+  margin-top: 4rem;
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.02em;
+}
+
+/* Sub Headings */
+.blog-subheading-gold {
+  color: #d4c
+}
+
+/* === BLOG IMAGE FIX === */
+.prose img.blog-image {
+  display: block !important;
+
+  width: 100%;
+  max-width: 820px;
+
+  aspect-ratio: 16 / 9;
+  height: auto;
+
+  object-fit: cover;
+
+  margin: 3rem auto;
+  border-radius: 18px;
+
+  background: #000;
+}
