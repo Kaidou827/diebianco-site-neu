@@ -6,8 +6,10 @@ import Image from "next/image"
 import { Mail, MapPin, Phone, Clock } from "lucide-react"
 import Navigation from "@/components/Navigation"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function Kontakt() {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     firstname: "",
     email: "",
@@ -105,7 +107,6 @@ export default function Kontakt() {
       console.log("API Response:", json)
 
       if (json.ok) {
-        setSubmitMessage("Danke! Nachricht erfolgreich gesendet.")
         setFormData({
           firstname: "",
           email: "",
@@ -113,14 +114,7 @@ export default function Kontakt() {
           message: "",
         })
         form.reset()
-
-        // Track form submission with Google Analytics if available
-        if (typeof (window as any).gtag === "function") {
-          ;(window as any).gtag("event", "form_submit", {
-            event_category: "Contact",
-            event_label: "Contact Form",
-          })
-        }
+        router.push("/kontakt/danke")
       } else {
         console.error("Form submission failed:", json)
         setSubmitMessage(json.message || "Fehler beim Senden der Nachricht.")

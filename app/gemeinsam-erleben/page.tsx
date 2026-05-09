@@ -5,11 +5,13 @@ import type React from "react"
 import { useState, useRef } from "react"
 import Image from "next/image"
 import Navigation from "@/components/Navigation"
+import { useRouter } from "next/navigation"
 
 // Add this CSS for the shine effects
 import "../globals.css"
 
 const GemeinsamErleben = () => {
+  const router = useRouter()
   const formRef = useRef<HTMLDivElement>(null)
   const [formData, setFormData] = useState({
     recommenderName: "",
@@ -18,15 +20,65 @@ const GemeinsamErleben = () => {
     recommendedContact: "",
     reason: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitMessage, setSubmitMessage] = useState("")
 
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    // Handle form submission here
-    console.log("Form submitted:", formData)
+    const form = e.currentTarget
+    setIsSubmitting(true)
+    setSubmitMessage("")
+
+    const payload = {
+      firstname: formData.recommenderName,
+      email: formData.recommenderEmail,
+      phone: formData.recommendedContact,
+      message: [
+        `Empfehlende Person: ${formData.recommenderName}`,
+        `Empfohlene Person: ${formData.recommendedName}`,
+        `Kontakt der empfohlenen Person: ${formData.recommendedContact}`,
+        formData.reason ? `Grund: ${formData.reason}` : "Grund: -",
+      ].join("\n"),
+      pageUri: window.location.href,
+      pageName: document.title,
+      hutk:
+        document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("hubspotutk="))
+          ?.split("=")[1] ?? undefined,
+    }
+
+    try {
+      const res = await fetch("/api/hubspot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      let json: { ok: boolean; message: string }
+      if (res.headers.get("content-type")?.includes("application/json")) {
+        json = await res.json()
+      } else {
+        const txt = await res.text()
+        throw new Error(`Unerwartete Antwort: ${txt}`)
+      }
+
+      if (json.ok) {
+        form.reset()
+        router.push("/gemeinsam-erleben/danke")
+      } else {
+        setSubmitMessage(json.message || "Fehler beim Senden der Empfehlung.")
+      }
+    } catch (error) {
+      console.error(error)
+      setSubmitMessage("Netzwerk- oder Serverfehler. Bitte spaeter erneut versuchen.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -496,10 +548,12 @@ const GemeinsamErleben = () => {
                 {/* Submit Button */}
                 <button
                   type="submit"
+                  disabled={isSubmitting}
                   className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
                 >
-                  Empfehlung absenden
+                  {isSubmitting ? "Sende..." : "Empfehlung absenden"}
                 </button>
+                {submitMessage && <p className="mt-4 text-sm text-red-300">{submitMessage}</p>}
               </form>
             </div>
           </div>

@@ -32,6 +32,7 @@ import {
 import { useRef, useState, useEffect } from "react"
 import { DeviceTestingPanel } from "@/components/device-testing"
 import { ResponsiveTestGrid } from "@/components/responsive-test-grid"
+import { useRouter } from "next/navigation"
 
 /* -------------------------------------------------- */
 /* Framer-motion helpers */
@@ -161,6 +162,7 @@ function FAQAccordion() {
 /* Page component */
 /* -------------------------------------------------- */
 export default function FarinaLandingPage() {
+  const router = useRouter()
   const [headerBg, setHeaderBg] = useState("bg-[#c2c2c2]/80 backdrop-blur-md")
   const [isMobile, setIsMobile] = useState(false)
 
@@ -371,8 +373,8 @@ export default function FarinaLandingPage() {
       }
 
       if (json.ok) {
-        alert("Vielen Dank! Ihre Nachricht wurde erfolgreich gesendet.")
         form.reset() // ✅ safe after await
+        router.push("/mentoring/danke")
       } else {
         alert("Fehler beim Senden: " + json.message)
       }
