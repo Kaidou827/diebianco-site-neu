@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
     // ------------------------------------------------------------------
     // 3 ) Send to HubSpot
     // ------------------------------------------------------------------
+    // Keep a short timeout so failed upstream calls do not stall the client form UX.
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 12000)
 
