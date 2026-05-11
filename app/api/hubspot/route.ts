@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     // ------------------------------------------------------------------
     // 3 ) Send to HubSpot
     // ------------------------------------------------------------------
-    // Keep a short timeout so upstream hiccups do not stall form completion UX.
+    // Keep a short timeout so upstream delays do not stall form completion UX.
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 12000)
 
