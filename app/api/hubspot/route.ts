@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ------------------------------------------------------------------
-    // 2 ) Send to inbox email (required)
+    // 2 ) Send to inbox email (best effort)
     // ------------------------------------------------------------------
     const smtpHost = process.env.SMTP_HOST
     const smtpPort = Number(process.env.SMTP_PORT)
@@ -51,26 +51,7 @@ export async function POST(request: NextRequest) {
         .filter(Boolean) ?? []
     const mailTo = configuredRecipients.length > 0 ? configuredRecipients : defaultRecipients
 
-    if (!smtpHost || !smtpPort || !smtpUser || !smtpPass || !mailFrom) {
-      console.error("Missing SMTP env vars. Required: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM(optional).")
-      return NextResponse.json(
-        {
-          ok: false,
-          message: "E-Mail Versand ist nicht konfiguriert. Bitte Spaeter erneut versuchen.",
-        },
-        { status: 500 },
-      )
-    }
-
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpSecure,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    })
+    const smtpConfigured = Boolean(smtpHost && smtpPort && smtpUser && smtpPass && mailFrom)
 
     const subjectPrefix = pageName ? `[${pageName}]` : "[Website Formular]"
     const textBody = [
@@ -87,13 +68,34 @@ export async function POST(request: NextRequest) {
       `Zeitpunkt: ${new Date().toISOString()}`,
     ].join("\n")
 
-    await transporter.sendMail({
-      from: mailFrom,
-      to: mailTo,
-      replyTo: email,
-      subject: `${subjectPrefix} Neue Anfrage von ${firstname}`,
-      text: textBody,
-    })
+    if (!smtpConfigured) {
+      console.warn(
+        "SMTP env vars missing. Skipping email send and continuing with HubSpot sync. Required: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM(optional).",
+      )
+    } else {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpSecure,
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+        })
+
+        await transporter.sendMail({
+          from: mailFrom,
+          to: mailTo,
+          replyTo: email,
+          subject: `${subjectPrefix} Neue Anfrage von ${firstname}`,
+          text: textBody,
+        })
+      } catch (emailErr) {
+        // Do not block form completion if SMTP is temporarily unavailable.
+        console.error("SMTP email send failed:", emailErr)
+      }
+    }
 
     // ------------------------------------------------------------------
     // 3 ) Build HubSpot payload (best effort)
