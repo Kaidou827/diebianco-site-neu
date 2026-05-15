@@ -55,6 +55,25 @@ npm start
 * All necessary configuration files are included
 * Environment variables are not included for security reasons
 
+### Required environment variables for form emails
+
+The form endpoint `app/api/hubspot/route.ts` sends every form submission to all recipients in `MAIL_TO`.
+Set these variables in your deployment environment (and local `.env.local`):
+
+* `SMTP_HOST`
+* `SMTP_PORT`
+* `SMTP_USER`
+* `SMTP_PASS`
+* `SMTP_SECURE` (`true` or `false`, optional - defaults to `true` when port is `465`)
+* `MAIL_FROM` (optional; defaults to `SMTP_USER`)
+* `MAIL_TO` (optional; comma/semicolon separated recipients)
+
+Default recipients used when `MAIL_TO` is not set:
+
+* `salon@diebianco.de`
+* `techotastic@gmail.com`
+* `scharam.saleh@gmail.com`
+
 ## Contact
 
 If you have any questions or need support, feel free to reach out.
