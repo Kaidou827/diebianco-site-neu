@@ -161,7 +161,6 @@ function FAQAccordion() {
 /* Page component */
 /* -------------------------------------------------- */
 export default function FarinaLandingPage() {
-  const [headerBg, setHeaderBg] = useState("bg-[#c2c2c2]/80 backdrop-blur-md")
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -169,21 +168,11 @@ export default function FarinaLandingPage() {
       setIsMobile(window.innerWidth < 800)
     }
 
-    const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setHeaderBg("bg-transparent")
-      } else {
-        setHeaderBg("bg-[#c2c2c2]/80 backdrop-blur-md")
-      }
-    }
-
     checkMobile()
     window.addEventListener("resize", checkMobile)
-    window.addEventListener("scroll", handleScroll)
 
     return () => {
       window.removeEventListener("resize", checkMobile)
-      window.removeEventListener("scroll", handleScroll)
     }
   }, [])
 
@@ -393,27 +382,7 @@ export default function FarinaLandingPage() {
         </>
       )}
 
-      {/* -------------------  STICKY NAVIGATION BAR  ------------------- */}
-      <motion.header
-        className={`fixed top-0 left-0 right-0 z-50 py-4 transition-colors duration-300 ${headerBg}`}
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        viewport={{ once: true, amount: isMobile ? 0.2 : 0.25 }}
-        variants={fadeInUp}
-      >
-        <div className="container mx-auto px-4 flex items-center justify-center">
-          <Image
-            src="/Element1.png"
-            alt="Website Logo"
-            width={250}
-            height={280}
-            className="h-12 w-auto object-contain mb-4 max-w-full"
-          />
-        </div>
-      </motion.header>
-
-      <main className="pt-20">
+      <main>
         {/* -------------------  NEW HERO SECTION  ------------------- */}
         <section className="py-16 md:py-24 px-4 flex justify-center items-center min-h-[80vh] bg-[rgba(44,44,44,1)]">
           <motion.div
@@ -1085,100 +1054,6 @@ export default function FarinaLandingPage() {
           </div>
         </motion.section>
 
-        {/* -------------------  FOOTER  ------------------- */}
-        <footer className="bg-[#2C2C2C] text-white">
-          <div className="container px-4 md:px-6 py-16 mx-auto text-center">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-              {/* Column 1: Logo & blurb */}
-              <div>
-                <Image
-                  src="/Element1.png" // Updated image source
-                  alt="DIE BIANCO MENTORING"
-                  width={260}
-                  height={90}
-                  className="h-16 w-auto object-contain mb-4 max-w-full"
-                />
-                <p className="text-white/70 leading-relaxed">
-                  Dein Mentoring für höhere Preise und nachhaltigen Erfolg in der Beauty-Branche.
-                </p>
-              </div>
-
-              {/* Column 2: Navigation */}
-              <div>
-                <h3 className="text-lg mb-4 text-[#D4C6A6]">Navigation</h3>
-                <ul className="space-y-2">
-                  <li>
-                    <a
-                      href="#ausbildung"
-                      onClick={(e) => {
-                        e.preventDefault() // Prevent default hash navigation
-                        document.getElementById("ausbildung")?.scrollIntoView({ behavior: "smooth" })
-                      }}
-                      className="text-white/70 hover:text-white"
-                    >
-                      Warum Mentoring?
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#moment-cards" // Updated href to new ID
-                      onClick={(e) => {
-                        e.preventDefault() // Prevent default hash navigation
-                        document.getElementById("moment-cards")?.scrollIntoView({ behavior: "smooth" })
-                      }}
-                      className="text-white/70 hover:text-white"
-                    >
-                      Philosophie
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#ablauf" className="text-white/70 hover:text-white">
-                      Ablauf
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#kunden" // Updated href to point to the DARK THEME (BIO) section
-                      onClick={(e) => {
-                        e.preventDefault() // Prevent default hash navigation
-                        document.getElementById("kunden")?.scrollIntoView({ behavior: "smooth" })
-                      }}
-                      className="text-white/70 hover:text-white"
-                    >
-                      Über Mich
-                    </a>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Column 3: Legal */}
-              <div>
-                <h3 className="text-lg mb-4 text-[#D4C6A6]">Rechtliches</h3>
-                <ul className="space-y-2">
-                  <li>
-                    <a href="/impressum" className="text-white/70 hover:text-white">
-                      Impressum
-                    </a>
-                  </li>
-                  <li>
-                    <a href="/datenschutz" className="text-white/70 hover:text-white">
-                      Datenschutz
-                    </a>
-                  </li>
-                  <li>
-                    <a href="/agb" className="text-white/70 hover:text-white">
-                      AGB
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-white/10 mt-12 pt-8 text-center text-white/50 text-sm">
-              <p>© {new Date().getFullYear()} DIE BIANCO MENTORING. Alle Rechte vorbehalten.</p>
-            </div>
-          </div>
-        </footer>
       </main>
     </div>
   )

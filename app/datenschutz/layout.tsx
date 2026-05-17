@@ -1,14 +1,8 @@
 import type React from "react"
-import type { Metadata } from "next"
 import Navigation from "@/components/Navigation"
 import SiteFooter from "@/components/SiteFooter"
 
-export const metadata: Metadata = {
-  title: "Impressum - Die Bianco",
-  description: "Rechtliche Angaben zum Friseursalon Die Bianco gemäß § 5 TMG.",
-}
-
-export default function ImpressumLayout({
+export default function DatenschutzLayout({
   children,
 }: {
   children: React.ReactNode

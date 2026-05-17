@@ -128,7 +128,7 @@ export default function Kontakt() {
               className="lg:col-span-3 backdrop-blur-md bg-black/20 rounded-md p-8 md:p-10 shadow-[0_20px_70px_-15px_rgba(0,0,0,0.1)] border border-white/10"
             >
               <div className="mb-6 rounded-md border border-white/10 bg-black/25 p-4">
-                <p className="text-sm text-white/80 mb-3">Du erreichst uns Mi-Sa von 09:00 bis 17:15 Uhr.</p>
+                <p className="text-sm text-white/80 mb-3">Du erreichst uns Mi-Fr von 09:00 bis 17:15 Uhr und Sa von 07:00 bis 14:00 Uhr.</p>
                 <a
                   href="tel:+491743091973"
                   className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] transition-all duration-300"
@@ -300,7 +300,8 @@ export default function Kontakt() {
                   <div>
                     <h3 className="font-serif text-lg mb-1 text-white">Öffnungszeiten</h3>
                     <div className="text-white/80 space-y-1">
-                      <p>Mi - Sa: 09:00 - 17:15 Uhr</p>
+                      <p>Mi - Fr: 09:00 - 17:15 Uhr</p>
+                      <p>Sa: 07:00 - 14:00 Uhr</p>
                       <p>Mo, Di, So: Geschlossen</p>
                       <p className="text-sm italic mt-2">Termine nach Vereinbarung</p>
                     </div>
@@ -446,7 +447,9 @@ export default function Kontakt() {
                     <polyline points="12 6 12 12 16 14"></polyline>
                   </svg>
                   <span>
-                    Mi - Sa: 09:00 - 17:15 Uhr
+                    Mi - Fr: 09:00 - 17:15 Uhr
+                    <br />
+                    Sa: 07:00 - 14:00 Uhr
                     <br />
                     Mo, Di, So: Geschlossen
                   </span>

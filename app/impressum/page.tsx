@@ -26,7 +26,7 @@ export default function ImpressumPage() {
               {/* Added break-words here */}
               <strong>Vertreten durch:</strong>
               <br />
-              [Vor- und Nachnamen der vertretungsberechtigten Personen]
+              Teresa Bianco
             </p>
           </div>
         </div>

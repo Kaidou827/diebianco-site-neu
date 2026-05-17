@@ -1,6 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
 import "../globals.css"
+import Navigation from "@/components/Navigation"
+import SiteFooter from "@/components/SiteFooter"
 
 export const metadata: Metadata = {
   title: "DIE BIANCO MENTORING - Premium Salon Mentoring",
@@ -13,5 +15,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  return <>{children}</>
+  return (
+    <>
+      <Navigation />
+      {children}
+      <SiteFooter />
+    </>
+  )
 }

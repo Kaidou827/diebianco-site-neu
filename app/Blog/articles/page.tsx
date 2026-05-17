@@ -189,7 +189,9 @@ export default function ArticlesPage() {
                     <polyline points="12 6 12 12 16 14"></polyline>
                   </svg>
                   <span>
-                    Mi - Sa: 09:00 - 17:15 Uhr
+                    Mi - Fr: 09:00 - 17:15 Uhr
+                    <br />
+                    Sa: 07:00 - 14:00 Uhr
                     <br />
                     Mo, Di, So: Geschlossen
                   </span>

@@ -1,5 +1,6 @@
 
-import BlogNavigation from "@/components/BlogNavigation"
+import type React from "react"
+import Navigation from "@/components/Navigation"
 
 export default function BlogLayout({
   children,
@@ -8,10 +9,8 @@ export default function BlogLayout({
 }) {
   return (
     <div className="min-h-screen bg-[rgba(180,177,170,1)] text-white">
-      <BlogNavigation />
-      <main className="min-h-screen bg-[rgba(180,177,170,1)] text-white">
-        {children}
-      </main>
+      <Navigation />
+      <main className="min-h-screen bg-[rgba(180,177,170,1)] text-white">{children}</main>
     </div>
   )
 }
