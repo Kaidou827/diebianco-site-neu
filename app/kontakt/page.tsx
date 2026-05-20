@@ -110,7 +110,7 @@ export default function Kontakt() {
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
         <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
 
-        <div className="container px-4 md:px-6 relative z-10">
+        <div className="container mx-auto px-4 md:px-6 relative z-10">
           <div className="max-w-3xl mx-auto text-center mb-12">
             <h1 className="font-serif text-3xl md:text-5xl tracking-tight mb-6 leading-tight">
               Kontaktieren Sie <span className="text-[rgb(212,198,166)]">uns</span>
@@ -129,8 +129,8 @@ export default function Kontakt() {
           </div>
 
           <div className="max-w-5xl mx-auto mb-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="rounded-md border border-white/10 bg-black/15 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
+              <div className="w-full max-w-[480px] rounded-md border border-white/10 bg-black/15 p-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="relative h-52 rounded-md overflow-hidden">
@@ -147,7 +147,7 @@ export default function Kontakt() {
                 </div>
               </div>
 
-              <div className="rounded-md border border-white/10 bg-black/15 p-4">
+              <div className="w-full max-w-[480px] rounded-md border border-white/10 bg-black/15 p-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="relative h-52 rounded-md overflow-hidden">
@@ -167,21 +167,21 @@ export default function Kontakt() {
           </div>
 
           <div className="max-w-6xl mx-auto mb-12">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-md border border-white/10 bg-black/20 p-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 justify-items-center">
+              <div className="w-full max-w-sm rounded-md border border-white/10 bg-black/20 p-5 text-center">
                 <p className="text-[#D4C6A6] text-sm mb-2">Katja E. · ★★★★★</p>
                 <p className="text-white/90 text-sm leading-relaxed">
                   &quot;Absolute Spitzenklasse - ein Salon, den ich von Herzen weiterempfehle. Ich habe ohne Zweifel den
                   schönsten Haarschnitt meines Lebens erhalten.&quot;
                 </p>
               </div>
-              <div className="rounded-md border border-white/10 bg-black/20 p-5">
+              <div className="w-full max-w-sm rounded-md border border-white/10 bg-black/20 p-5 text-center">
                 <p className="text-[#D4C6A6] text-sm mb-2">N. Hales · ★★★★★</p>
                 <p className="text-white/90 text-sm leading-relaxed">
                   &quot;Wer einmal dort war, wird nie wieder zu einem anderen Salon gehen. Absolute Profis das ganze Team.&quot;
                 </p>
               </div>
-              <div className="rounded-md border border-white/10 bg-black/20 p-5">
+              <div className="w-full max-w-sm rounded-md border border-white/10 bg-black/20 p-5 text-center">
                 <p className="text-[#D4C6A6] text-sm mb-2">Sophia K. · ★★★★★</p>
                 <p className="text-white/90 text-sm leading-relaxed">
                   &quot;Meinen Friseur des Vertrauens hab ich gefunden! Man fühlt sich super wohl und verbringt dort gerne
