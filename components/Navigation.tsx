@@ -53,6 +53,11 @@ export default function Navigation() {
       href: "/dienstleistungen/blond-spezialisten",
       icon: <Sparkles className="w-5 h-5" />,
     },
+    {
+      name: "Grey Blending",
+      href: "/dienstleistungen/grey-blending",
+      icon: <Sparkles className="w-5 h-5" />,
+    },
     { name: "Keratinbehandlung", href: "/dienstleistungen/keratinbehandlung", icon: <Feather className="w-5 h-5" /> },
     { name: "Stilberatung", href: "/dienstleistungen/stilberatung", icon: <ShoppingBag className="w-5 h-5" /> },
     { name: "Hautdiagnostik", href: "/dienstleistungen/hautdiagnostik", icon: <Eye className="w-5 h-5" /> },

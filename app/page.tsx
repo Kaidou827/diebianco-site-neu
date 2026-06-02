@@ -466,6 +466,58 @@ export default function Home() {
               </div>
             </Link>
 
+            {/* Card 4: GREY BLENDING */}
+            <Link
+              href="/dienstleistungen/grey-blending"
+              className="group block"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            >
+              <div className="relative h-full bg-black/20 backdrop-blur-sm rounded-xl overflow-hidden border border-white/20 transition-all duration-300 hover:bg-white/15">
+                <div className="aspect-[4/3] relative">
+                  <Image src="/Blondierung.jpg" alt="Grey Blending" fill className="object-cover" />
+                  <div className="absolute inset-0 "></div>
+                </div>
+                <div className="p-6">
+                  <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-4">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path>
+                    </svg>
+                  </div>
+                  <h3 className="font-serif text-xl mb-2 text-white uppercase tracking-wider">Grey Blending</h3>
+                  <p className="text-white/90 font-medium mb-6">
+                    Natuerliche Uebergaenge fuer einen modernen, typgerechten Look.
+                  </p>
+                  <div className="mt-auto">
+                    <span className="inline-flex items-center text-[#D4C6A6] font-medium group-hover:text-white transition-colors">
+                      Erfahre mehr
+                      <svg
+                        className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M5 12h14"></path>
+                        <path d="m12 5 7 7-7 7"></path>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+
             {/* Card 4: KERATINBEHANDLUNG */}
             <Link
               href="/dienstleistungen/keratinbehandlung"

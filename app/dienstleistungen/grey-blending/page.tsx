@@ -5,15 +5,14 @@ import Link from "next/link"
 import Navigation from "@/components/Navigation"
 import { ArrowRight } from "lucide-react"
 
-export default function BlondSpezialistenPage() {
+export default function GreyBlendingPage() {
   return (
     <div className="bg-[#b4b1aa] text-white">
       {/* Standardized Navigation Component */}
       <Navigation />
 
-      {/* Hero Section - Improved layout and padding */}
+      {/* Hero Section */}
       <section className="pt-20 pb-16 md:pt-24 md:pb-20 relative">
-        {/* Subtle background elements */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-transparent opacity-50"></div>
         <div className="absolute left-0 right-0 top-0 h-px bg-white/10"></div>
 
@@ -21,29 +20,30 @@ export default function BlondSpezialistenPage() {
           <div className="max-w-3xl mx-auto">
             <div className="flex flex-col items-center">
               <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-white leading-tight mb-6 text-center">
-                BLOND-<span className="text-[#D4C6A6]">SPEZIALISTEN</span>
+                GREY <span className="text-[#D4C6A6]">BLENDING</span>
               </h1>
 
               <div className="flex items-center gap-3 mb-8">
                 <div className="h-px w-12 bg-white/20"></div>
-                <p className="text-lg text-white/80 font-light">Blond mit Charakter</p>
+                <p className="text-lg text-white/80 font-light">Grau umarmen - mit Stil</p>
                 <div className="h-px w-12 bg-white/20"></div>
               </div>
 
-              <p className="text-xl md:text-2xl text-white mb-4 text-center font-light">Wow, ohne Kompromisse.</p>
+              <p className="text-xl md:text-2xl text-white mb-4 text-center font-light">
+                Mehr als nur Grau. Ein Look der zu dir passt.
+              </p>
 
               <p className="text-base md:text-lg text-white/70 mb-10 max-w-2xl mx-auto text-center leading-relaxed">
-                Wir sind Experten für alle Blondnuancen – von kühlem Platin bis warmem Honig. Mit viel
-                Fingerspitzengefühl und Expertise schaffen wir deinen perfekten Blondton – typgerecht, strahlend, mit
-                Wow-Effekt.
+                Grey Blending ist die Kunst, graues Haar nicht zu verstecken - sondern es zum Signature-Look zu machen.
+                Bei DIE BIANCO arbeiten wir individuell auf deinen Haartyp und deine natuerliche Farbe abgestimmt.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  href="/kontakt"
+                  href="/grey-blending-krefeld"
                   className="inline-flex justify-center items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
                 >
-                  Jetzt Termin vereinbaren
+                  Jetzt Beratungstermin anfragen
                 </Link>
                 <button
                   onClick={() => {
@@ -66,22 +66,22 @@ export default function BlondSpezialistenPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             <h2 className="font-serif text-3xl md:text-4xl text-white mb-8 text-center">
-              Für ein Blond, das <span className="text-[#D4C6A6]">begeistert</span>
+              Fuer ein Grau, das <span className="text-[#D4C6A6]">begeistert</span>
             </h2>
             <p className="text-white/80 text-lg mb-12 text-center">
-              Bei DIE BIANCO verstehen wir die Kunst des perfekten Blonds. Jede Nuance wird individuell auf deinen Typ
-              abgestimmt – für ein Ergebnis, das natürlich strahlt und lange hält.
+              Bei DIE BIANCO verstehen wir Grey Blending als Kunst. Jede Nuance wird individuell auf deinen Typ
+              abgestimmt - fuer ein Ergebnis das natuerlich wirkt und langanhaltend strahlt.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="relative h-[500px] rounded-lg overflow-hidden">
-              <Image src="/Blondierung.jpg" alt="Professionelle Blondierung" fill className="object-cover" />
+              <Image src="/Blondierung.jpg" alt="Grey Blending Behandlung" fill className="object-cover" />
               <div className="absolute inset-0"></div>
             </div>
 
             <div className="bg-black/20 backdrop-blur-sm rounded-xl p-8 border border-white/20">
-              <h3 className="font-serif text-2xl text-white mb-6">Unsere Blond-Expertise</h3>
+              <h3 className="font-serif text-2xl text-white mb-6">Unsere Grey Blending Expertise</h3>
 
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
@@ -91,8 +91,8 @@ export default function BlondSpezialistenPage() {
                   <div>
                     <h4 className="text-white text-lg mb-2">Individuelle Beratung</h4>
                     <p className="text-white/70">
-                      Wir analysieren deinen Hautton und Stil, um die perfekte Blondnuance zu finden – von eisigem
-                      Platin bis zu warmem Karamell.
+                      Wir analysieren deine natuerliche Haarfarbe und deinen Hautton um den perfekten Grey Blending
+                      Look fuer dich zu finden.
                     </p>
                   </div>
                 </div>
@@ -104,8 +104,8 @@ export default function BlondSpezialistenPage() {
                   <div>
                     <h4 className="text-white text-lg mb-2">Schonende Technik</h4>
                     <p className="text-white/70">
-                      Mit modernsten Techniken und hochwertigen Produkten erreichen wir dein Traumblond, während wir die
-                      Haargesundheit bewahren.
+                      Mit modernen Techniken und hochwertigen Produkten erzielen wir natuerliche Uebergaenge die dein
+                      Haar gesund lassen.
                     </p>
                   </div>
                 </div>
@@ -115,10 +115,10 @@ export default function BlondSpezialistenPage() {
                     3
                   </div>
                   <div>
-                    <h4 className="text-white text-lg mb-2">Langanhaltender Glanz</h4>
+                    <h4 className="text-white text-lg mb-2">Langanhaltender Effekt</h4>
                     <p className="text-white/70">
-                      Durch spezielle Pflegebehandlungen und individuelle Tipps bleibt dein Blond lange strahlend und
-                      gesund.
+                      Durch gezielte Pflege und individuelle Tipps bleibt dein Grey Blending Look lange frisch und
+                      gepflegt.
                     </p>
                   </div>
                 </div>
@@ -132,44 +132,42 @@ export default function BlondSpezialistenPage() {
       <section className="py-16 md:py-24 bg-[#a09a93]">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center mb-16">
-            <h2 className="font-serif text-3xl md:text-4xl text-white mb-6">
-              Die Vorteile unserer Blond-Spezialisierung
-            </h2>
+            <h2 className="font-serif text-3xl md:text-4xl text-white mb-6">Die Vorteile unseres Grey Blendings</h2>
             <p className="text-white/80 text-lg">
-              Als Blond-Experten bieten wir dir mehr als nur eine Haarfarbe – wir kreieren deinen persönlichen
-              Signature-Look.
+              Grey Blending bringt natuerliche Eleganz und eine moderne Ausstrahlung zusammen - individuell auf dich
+              abgestimmt.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-black/20 backdrop-blur-sm rounded-xl p-8 border border-white/20">
-              <h3 className="text-xl text-[#D4C6A6] mb-4">Perfekte Nuancierung</h3>
+              <h3 className="text-xl text-[#D4C6A6] mb-4">Natuerliche Ausstrahlung</h3>
               <p className="text-white/80">
-                Von kühlem Aschblond bis zu warmem Goldblond – wir finden die Nuance, die perfekt zu deinem Teint und
-                Stil passt.
+                Grau muss nicht alt wirken. Der richtige Look unterstreicht deine Persoenlichkeit und laesst dich
+                modern und selbstbewusst aussehen.
               </p>
             </div>
 
             <div className="bg-black/20 backdrop-blur-sm rounded-xl p-8 border border-white/20">
               <h3 className="text-xl text-[#D4C6A6] mb-4">Gesundes Haar</h3>
               <p className="text-white/80">
-                Durch schonende Techniken und hochwertige Produkte bleibt dein Haar trotz Blondierung gesund und
-                glänzend.
+                Durch schonende Techniken und hochwertige Produkte bleibt dein Haar trotz Behandlung gesund und
+                glaenzend.
               </p>
             </div>
 
             <div className="bg-black/20 backdrop-blur-sm rounded-xl p-8 border border-white/20">
-              <h3 className="text-xl text-[#D4C6A6] mb-4">Natürliche Ergebnisse</h3>
+              <h3 className="text-xl text-[#D4C6A6] mb-4">Zeitloses Ergebnis</h3>
               <p className="text-white/80">
-                Mit verschiedenen Techniken wie Balayage oder Foiling kreieren wir natürlich wirkende, mehrdimensionale
-                Blondtöne.
+                Grey Blending ist kein Trend - es ist ein individueller Signature-Look der nie aus der Mode kommt.
               </p>
             </div>
 
             <div className="bg-black/20 backdrop-blur-sm rounded-xl p-8 border border-white/20">
               <h3 className="text-xl text-[#D4C6A6] mb-4">Individuelle Pflege</h3>
               <p className="text-white/80">
-                Du erhältst eine auf dein Blond abgestimmte Pflegeroutine, damit deine Farbe lange strahlend bleibt.
+                Du erhaeltst eine auf dein Grey Blending abgestimmte Pflegeroutine damit deine Farbe lange strahlend
+                bleibt.
               </p>
             </div>
           </div>
@@ -218,28 +216,17 @@ export default function BlondSpezialistenPage() {
         </div>
       </section>
 
-      <section className="pb-4 md:pb-8 bg-[#b4b1aa]">
-        <div className="container mx-auto px-4">
-          <p className="text-center text-white/80">
-            Auch interessant:{" "}
-            <Link href="/dienstleistungen/grey-blending" className="text-[#D4C6A6] hover:text-white transition-colors">
-              Grey Blending
-            </Link>
-          </p>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="py-16 md:py-24 bg-[#b4b1aa]">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto bg-black/20 backdrop-blur-sm rounded-xl p-8 md:p-12 border border-white/20">
             <div className="text-center">
-              <h2 className="font-serif text-3xl md:text-4xl text-white mb-6">Bereit für dein Traumblond?</h2>
+              <h2 className="font-serif text-3xl md:text-4xl text-white mb-6">Bereit fuer deinen Grey Blending Look?</h2>
               <p className="text-white/80 text-lg mb-8">
-                Vereinbare jetzt einen Termin und lass dich von unseren Blond-Experten beraten.
+                Vereinbare jetzt einen Termin und lass dich von unseren Expertinnen persoenlich beraten.
               </p>
               <Link
-                href="/kontakt"
+                href="/grey-blending-krefeld"
                 className="inline-flex justify-center items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
               >
                 <span className="relative z-10 font-medium">Jetzt Termin vereinbaren</span>
@@ -272,7 +259,8 @@ export default function BlondSpezialistenPage() {
               </div>
               <div className="w-12 h-px bg-gradient-to-r from-[#D4C6A6] to-transparent mt-2"></div>
               <p className="text-white/70 leading-relaxed mb-6">
-                Ihr exklusiver Rückzugsort für authentische Schönheit und ungestörte Momente der Pflege und Entspannung.
+                Ihr exklusiver Rueckzugsort fuer authentische Schoenheit und ungestoerte Momente der Pflege und
+                Entspannung.
               </p>
             </div>
 
@@ -340,9 +328,9 @@ export default function BlondSpezialistenPage() {
               </address>
             </div>
 
-            {/* Öffnungszeiten */}
+            {/* Oeffnungszeiten */}
             <div className="md:col-span-3 md:col-start-10">
-              <h3 className="font-serif text-lg mb-4 text-[#D4C6A6]">Öffnungszeiten</h3>
+              <h3 className="font-serif text-lg mb-4 text-[#D4C6A6]">Oeffnungszeiten</h3>
               <div className="text-white/70 space-y-3">
                 <p className="flex items-start">
                   <svg

@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/ueber-uns`, priority: 0.8 },
     { url: `${baseUrl}/gemeinsam-erleben`, priority: 0.8 },
     { url: `${baseUrl}/kontakt`, priority: 0.9 },
+    { url: `${baseUrl}/grey-blending-krefeld`, priority: 0.9 },
     { url: `${baseUrl}/impressum`, priority: 0.5 },
     { url: `${baseUrl}/datenschutz`, priority: 0.5 },
     { url: `${baseUrl}/mentoring`, priority: 0.6 },
@@ -17,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // ===== DIENSTLEISTUNGEN =====
     { url: `${baseUrl}/dienstleistungen`, priority: 0.9 },
     { url: `${baseUrl}/dienstleistungen/blond-spezialisten`, priority: 0.8 },
+    { url: `${baseUrl}/dienstleistungen/grey-blending`, priority: 0.8 },
     { url: `${baseUrl}/dienstleistungen/farbtypologie`, priority: 0.8 },
     { url: `${baseUrl}/dienstleistungen/hautdiagnostik`, priority: 0.8 },
     { url: `${baseUrl}/dienstleistungen/keratinbehandlung`, priority: 0.8 },
