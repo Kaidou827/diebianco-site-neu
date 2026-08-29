@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { FELDER } from "@/lib/hubspot/schema"
+import nodemailer from "nodemailer"
+import { FELDER, optionWert } from "@/lib/hubspot/schema"
 
 /**
  * POST /api/anfrage
@@ -24,6 +25,61 @@ const TOKEN = process.env.HUBSPOT_PRIVATE_APP_TOKEN || ""
 const ERLAUBTE_FELDER = new Set(
   FELDER.filter((f) => f.welle !== "workflow").map((f) => f.hubspotName),
 )
+
+// ── E-Mail-Benachrichtigung an den Salon ─────────────────────────────────────
+// Empfänger: über MAIL_TO überschreibbar; Default = Salon + Scharam (kein techotastic mehr).
+// Absender:  MAIL_FROM, sonst der authentifizierte SMTP-Account (beste Zustellbarkeit),
+//            sonst salon@diebianco.de.
+const MAIL_EMPFAENGER = process.env.MAIL_TO
+  ? process.env.MAIL_TO.split(/[;,]/).map((s) => s.trim()).filter(Boolean)
+  : ["salon@diebianco.de", "scharam.saleh@gmail.com"]
+const MAIL_ABSENDER = process.env.MAIL_FROM || process.env.SMTP_USER || "salon@diebianco.de"
+
+/** Slug -> Anzeige-Label der Wunsch-Behandlung (für lesbare Mails). */
+const BEHANDLUNG_LABELS: Record<string, string> = Object.fromEntries(
+  (FELDER.find((f) => f.hubspotName === "wunsch_behandlung")?.optionen ?? []).map((l) => [optionWert(l), l]),
+)
+
+async function sendeBenachrichtigung(d: {
+  firstname: string
+  lastname: string
+  phone: string
+  email: string
+  wunsch: string
+  anmerkung: string
+}): Promise<void> {
+  const host = process.env.SMTP_HOST
+  const port = Number(process.env.SMTP_PORT)
+  const user = process.env.SMTP_USER
+  const pass = process.env.SMTP_PASS
+  const secure = process.env.SMTP_SECURE === "true" || port === 465
+  if (!host || !port || Number.isNaN(port) || !user || !pass) {
+    console.warn("SMTP unvollständig — Benachrichtigung übersprungen.")
+    return
+  }
+  const transporter = nodemailer.createTransport({ host, port, secure, auth: { user, pass } })
+  const text = [
+    "Neue Terminanfrage über die Website",
+    "",
+    `Name: ${`${d.firstname} ${d.lastname}`.trim()}`,
+    `Telefon: ${d.phone}`,
+    `E-Mail: ${d.email}`,
+    `Wunsch-Behandlung: ${d.wunsch || "-"}`,
+    d.anmerkung ? `Nachricht: ${d.anmerkung}` : "",
+    "",
+    "Der vollständige Kontakt liegt in HubSpot.",
+  ]
+    .filter(Boolean)
+    .join("\n")
+
+  await transporter.sendMail({
+    from: MAIL_ABSENDER,
+    to: MAIL_EMPFAENGER,
+    replyTo: d.email,
+    subject: `Neue Anfrage: ${d.firstname} – ${d.wunsch || "Termin"}`,
+    text,
+  })
+}
 
 // ── HTTP-Helfer ────────────────────────────────────────────────────────────
 async function hsFetch(pfad: string, init?: RequestInit): Promise<Response> {
@@ -150,6 +206,21 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
     const contactId = vorhandeneId
       ? (await aktualisiereKontakt(vorhandeneId, properties), vorhandeneId)
       : await legeKontaktAn(properties)
+
+    // Sofort-Benachrichtigung an den Salon (best effort — Fehler blockiert die Antwort nicht).
+    try {
+      await sendeBenachrichtigung({
+        firstname,
+        lastname,
+        phone,
+        email,
+        wunsch: BEHANDLUNG_LABELS[wunschBehandlung] || wunschBehandlung,
+        anmerkung: typeof extra.anmerkung_kundin === "string" ? extra.anmerkung_kundin : "",
+      })
+    } catch (mailErr) {
+      console.error("Benachrichtigungs-Mail fehlgeschlagen:", mailErr)
+    }
+
     return NextResponse.json({ ok: true, contactId })
   } catch (err) {
     console.error("Welle 1 Fehler:", err)

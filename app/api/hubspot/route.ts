@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     const smtpPass = process.env.SMTP_PASS
     const smtpSecure = process.env.SMTP_SECURE === "true" || smtpPort === 465
     const mailFrom = process.env.MAIL_FROM || smtpUser
-    const defaultRecipients = ["salon@diebianco.de", "techotastic@gmail.com", "scharam.saleh@gmail.com"]
+    const defaultRecipients = ["salon@diebianco.de", "scharam.saleh@gmail.com"]
     const configuredRecipients =
       process.env.MAIL_TO
         ?.split(/[;,]/)

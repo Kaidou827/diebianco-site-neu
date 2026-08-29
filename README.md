@@ -71,7 +71,6 @@ Set these variables in your deployment environment (and local `.env.local`):
 Default recipients used when `MAIL_TO` is not set:
 
 * `salon@diebianco.de`
-* `techotastic@gmail.com`
 * `scharam.saleh@gmail.com`
 
 ## Contact
