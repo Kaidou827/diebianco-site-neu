@@ -136,6 +136,15 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
     properties.wunsch_behandlung = wunschBehandlung
   }
 
+  // Optionale Zusatzfelder (z.B. anmerkung_kundin bei der Standard-Variante) —
+  // nur erlaubte Schema-Felder übernehmen.
+  const extra = (body.extra || {}) as Record<string, unknown>
+  for (const [name, value] of Object.entries(extra)) {
+    if (ERLAUBTE_FELDER.has(name) && value != null && String(value).length > 0) {
+      properties[name] = String(value)
+    }
+  }
+
   try {
     const vorhandeneId = await findeKontaktId(email)
     const contactId = vorhandeneId

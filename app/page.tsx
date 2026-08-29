@@ -495,7 +495,7 @@ export default function Home() {
                   </div>
                   <h3 className="font-serif text-xl mb-2 text-white uppercase tracking-wider">Grey Blending</h3>
                   <p className="text-white/90 font-medium mb-6">
-                    Natuerliche Uebergaenge fuer einen modernen, typgerechten Look.
+                    Natürliche Übergänge für einen modernen, typgerechten Look.
                   </p>
                   <div className="mt-auto">
                     <span className="inline-flex items-center text-[#D4C6A6] font-medium group-hover:text-white transition-colors">

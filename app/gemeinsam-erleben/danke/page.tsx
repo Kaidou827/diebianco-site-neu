@@ -7,10 +7,10 @@ export default function GemeinsamErlebenDankePage() {
       <main className="min-h-screen bg-[#b4b1aa] text-white flex items-center justify-center px-4">
         <section className="w-full max-w-2xl bg-black/20 backdrop-blur-sm border border-white/10 rounded-md p-8 md:p-12 text-center">
           <h1 className="font-serif text-3xl md:text-4xl mb-4">
-            Danke fuer deine <span className="text-[#D4C6A6]">Empfehlung</span>
+            Danke für deine <span className="text-[#D4C6A6]">Empfehlung</span>
           </h1>
           <p className="text-white/80 mb-8">
-            Wir haben deine Angaben erhalten und kuemmern uns um die weitere Kontaktaufnahme.
+            Wir haben deine Angaben erhalten und kümmern uns um die weitere Kontaktaufnahme.
           </p>
           <Link
             href="/gemeinsam-erleben"

@@ -1,127 +1,12 @@
-"use client"
-
-import type React from "react"
-
 import Image from "next/image"
-import Script from "next/script"
 import { Mail, MapPin, Phone, Clock, CheckCircle } from "lucide-react"
 import Navigation from "@/components/Navigation"
-import { useState } from "react"
 import SiteFooter from "@/components/SiteFooter"
+import AnfrageFormular from "@/components/AnfrageFormular"
 
 export default function Kontakt() {
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
-  const isTurnstileEnabled = turnstileSiteKey.length > 0
-
-  const [formData, setFormData] = useState({
-    firstname: "",
-    email: "",
-    phone: "",
-    message: "",
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitMessage, setSubmitMessage] = useState("")
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
-
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const form = e.currentTarget as HTMLFormElement
-    const honeypotValue = (form.querySelector('input[name="website"]') as HTMLInputElement | null)?.value || ""
-    const turnstileToken =
-      (form.querySelector('input[name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || ""
-    setIsSubmitting(true)
-    setSubmitMessage("Sende...")
-
-    try {
-      // Validate required fields
-      if (!formData.firstname || !formData.email || !formData.phone) {
-        setSubmitMessage("Name, E-Mail und Telefon sind erforderlich.")
-        setIsSubmitting(false)
-        return
-      }
-
-      if (isTurnstileEnabled && !turnstileToken) {
-        setSubmitMessage("Bitte CAPTCHA-Validierung abschliessen.")
-        setIsSubmitting(false)
-        return
-      }
-
-      // Get HubSpot tracking cookie if available
-      let hutk = ""
-      try {
-        const hubspotCookie = document.cookie.split("; ").find((row) => row.startsWith("hubspotutk="))
-        if (hubspotCookie) {
-          hutk = hubspotCookie.split("=")[1]
-        }
-      } catch (e) {
-        console.log("Could not get HubSpot cookie:", e)
-      }
-
-      const payload = {
-        firstname: formData.firstname,
-        email: formData.email,
-        phone: formData.phone,
-        message: formData.message,
-        pageUri: window.location.href,
-        pageName: document.title,
-        hutk: hutk || undefined,
-        honeypot: honeypotValue,
-        turnstileToken: isTurnstileEnabled ? turnstileToken : undefined,
-        spamProtectionRequired: isTurnstileEnabled,
-      }
-
-      // Submit to HubSpot API
-      const response = await fetch("/api/hubspot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-
-      let json: { ok: boolean; message: string }
-      if (response.headers.get("content-type")?.includes("application/json")) {
-        json = await response.json()
-      } else {
-        const txt = await response.text()
-        throw new Error(`Unerwartete Antwort: ${txt}`)
-      }
-
-      if (json.ok) {
-        const encodedName = encodeURIComponent(formData.firstname.trim())
-        setFormData({
-          firstname: "",
-          email: "",
-          phone: "",
-          message: "",
-        })
-        form.reset()
-        window.location.assign(`/kontakt/danke?name=${encodedName}`)
-        return
-      } else {
-        console.error("Form submission failed:", json)
-        setSubmitMessage(json.message || "Fehler beim Senden der Nachricht.")
-      }
-    } catch (error) {
-      console.error("Form submission error:", error)
-      setSubmitMessage("Fehler beim Senden der Nachricht.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   return (
     <div className="bg-[#b4b1aa] text-white min-h-screen">
-      {isTurnstileEnabled && (
-        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
-      )}
       {/* Standardized Navigation Component */}
       <Navigation />
 
@@ -227,124 +112,27 @@ export default function Kontakt() {
                 </a>
               </div>
               <h3 className="font-serif text-2xl mb-2 text-white">Termin anfragen - wir melden uns innerhalb von 24 Stunden.</h3>
-              <p className="text-white/80 mb-8">Einfach Formular ausfuellen, Teresa meldet sich persoenlich bei dir.</p>
-              <form onSubmit={onSubmit} className="space-y-6">
-                <div aria-hidden="true" className="absolute -left-[10000px] top-auto w-px h-px overflow-hidden">
-                  <label htmlFor="website">Website</label>
-                  <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
-                </div>
+              <p className="text-white/80 mb-8">Einfach Formular ausfüllen, Teresa meldet sich persönlich bei dir.</p>
+              <AnfrageFormular variante="standard" theme="dunkel" chrome={false} />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="firstname" className="block text-sm font-medium text-white/80 mb-2">
-                      Name *
-                    </label>
-                    <input
-                      id="firstname"
-                      name="firstname"
-                      type="text"
-                      value={formData.firstname}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 rounded-md border border-white/10 bg-black/20 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all placeholder-white/50"
-                      placeholder="Ihr Name"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-white/80 mb-2">
-                      E-Mail *
-                    </label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 rounded-md border border-white/10 bg-black/20 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all placeholder-white/50"
-                      placeholder="Ihre E-Mail"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-white/80 mb-2">
-                    Telefon *
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 rounded-md border border-white/10 bg-black/20 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all placeholder-white/50"
-                    placeholder="+49 …"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-white/80 mb-2">
-                    Nachricht
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows={5}
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-md border border-white/10 bg-black/20 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all resize-none placeholder-white/50"
-                    placeholder="Ihre Nachricht an uns"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg disabled:opacity-50"
-                >
-                  {isSubmitting ? "Sende..." : "Nachricht senden"}
-                </button>
-
-                {isTurnstileEnabled && (
-                  <div
-                    className="cf-turnstile"
-                    data-sitekey={turnstileSiteKey}
-                    data-theme="light"
-                    data-size="flexible"
-                  />
-                )}
-
-                <div className="rounded-md border border-white/10 bg-black/25 p-4">
-                  <p className="italic text-white/90">&quot;Ich melde mich persoenlich bei dir - versprochen.&quot;</p>
-                  <p className="mt-1 text-sm text-[#D4C6A6]">- Teresa Bianco</p>
-                  <ul className="mt-4 space-y-2 text-sm text-white/85">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-[#D4C6A6]" />
-                      Persoenliche Beratung
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-[#D4C6A6]" />
-                      Antwort innerhalb von 24h
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-[#D4C6A6]" />
-                      Keine Verpflichtung
-                    </li>
-                  </ul>
-                </div>
-              </form>
-              {submitMessage && (
-                <div
-                  className={`mt-4 p-3 rounded-md text-center ${
-                    submitMessage.includes("Danke")
-                      ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                      : "bg-red-500/20 text-red-300 border border-red-500/30"
-                  }`}
-                >
-                  {submitMessage}
-                </div>
-              )}
+              <div className="mt-6 rounded-md border border-white/10 bg-black/25 p-4">
+                <p className="italic text-white/90">&quot;Ich melde mich persönlich bei dir - versprochen.&quot;</p>
+                <p className="mt-1 text-sm text-[#D4C6A6]">- Teresa Bianco</p>
+                <ul className="mt-4 space-y-2 text-sm text-white/85">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-[#D4C6A6]" />
+                    Persönliche Beratung
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-[#D4C6A6]" />
+                    Antwort innerhalb von 24h
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-[#D4C6A6]" />
+                    Keine Verpflichtung
+                  </li>
+                </ul>
+              </div>
             </div>
 
             {/* Contact Info - Now spans 2 columns */}

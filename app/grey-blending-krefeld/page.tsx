@@ -136,7 +136,7 @@ export default function GreyBlendingKrefeld() {
               Grey Blending <span className="text-[rgb(212,198,166)]">in Krefeld</span>
             </h1>
             <p className="text-lg md:text-xl text-white/80 leading-relaxed max-w-2xl mx-auto">
-              Vereinbare deinen persoenlichen Beratungstermin und entdecke deinen individuellen Grey Blending Look.
+              Vereinbare deinen persönlichen Beratungstermin und entdecke deinen individuellen Grey Blending Look.
             </p>
           </div>
 
@@ -315,12 +315,12 @@ export default function GreyBlendingKrefeld() {
                 )}
 
                 <div className="rounded-md border border-white/10 bg-black/25 p-4">
-                  <p className="italic text-white/90">&quot;Ich melde mich persoenlich bei dir - versprochen.&quot;</p>
+                  <p className="italic text-white/90">&quot;Ich melde mich persönlich bei dir - versprochen.&quot;</p>
                   <p className="mt-1 text-sm text-[#D4C6A6]">- Teresa Bianco</p>
                   <ul className="mt-4 space-y-2 text-sm text-white/85">
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-[#D4C6A6]" />
-                      Persoenliche Beratung
+                      Persönliche Beratung
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-[#D4C6A6]" />

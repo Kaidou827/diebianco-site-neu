@@ -18,10 +18,10 @@ export default async function KontaktDankePage({
             {headingText} <span className="text-[#D4C6A6]">- Anfrage erhalten</span>
           </h1>
           <p className="text-white/80 mb-8">
-            Teresa meldet sich innerhalb von 24 Stunden persoenlich bei dir.
+            Teresa meldet sich innerhalb von 24 Stunden persönlich bei dir.
           </p>
           <p className="text-white/80 mb-8">
-            Rueckfragen? Ruf uns direkt an:{" "}
+            Rückfragen? Ruf uns direkt an:{" "}
             <a href="tel:+491743091973" className="text-[#D4C6A6] hover:text-white transition-colors">
               +49 174 3091973
             </a>
