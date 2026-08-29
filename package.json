@@ -6,7 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "sync:hubspot": "tsx scripts/sync-properties.ts"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",
@@ -72,6 +73,7 @@
     "eslint-config-next": "^15.3.4",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   },
   "pnpm": {

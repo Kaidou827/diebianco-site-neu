@@ -3,12 +3,16 @@
 import type React from "react"
 
 import Image from "next/image"
+import Script from "next/script"
 import { Mail, MapPin, Phone, Clock, CheckCircle } from "lucide-react"
 import Navigation from "@/components/Navigation"
 import { useState } from "react"
 import SiteFooter from "@/components/SiteFooter"
 
 export default function GreyBlendingKrefeld() {
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
+  const isTurnstileEnabled = turnstileSiteKey.length > 0
+
   const [formData, setFormData] = useState({
     firstname: "",
     email: "",
@@ -29,6 +33,9 @@ export default function GreyBlendingKrefeld() {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget as HTMLFormElement
+    const honeypotValue = (form.querySelector('input[name="website"]') as HTMLInputElement | null)?.value || ""
+    const turnstileToken =
+      (form.querySelector('input[name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || ""
     setIsSubmitting(true)
     setSubmitMessage("Sende...")
 
@@ -36,6 +43,12 @@ export default function GreyBlendingKrefeld() {
       // Validate required fields
       if (!formData.firstname || !formData.email || !formData.phone) {
         setSubmitMessage("Name, E-Mail und Telefon sind erforderlich.")
+        setIsSubmitting(false)
+        return
+      }
+
+      if (isTurnstileEnabled && !turnstileToken) {
+        setSubmitMessage("Bitte CAPTCHA-Validierung abschliessen.")
         setIsSubmitting(false)
         return
       }
@@ -59,6 +72,9 @@ export default function GreyBlendingKrefeld() {
         pageUri: window.location.href,
         pageName: document.title,
         hutk: hutk || undefined,
+        honeypot: honeypotValue,
+        turnstileToken: isTurnstileEnabled ? turnstileToken : undefined,
+        spamProtectionRequired: isTurnstileEnabled,
       }
 
       // Submit to HubSpot API
@@ -103,6 +119,9 @@ export default function GreyBlendingKrefeld() {
 
   return (
     <div className="bg-[#b4b1aa] text-white min-h-screen">
+      {isTurnstileEnabled && (
+        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
+      )}
       {/* Standardized Navigation Component */}
       <Navigation />
 
@@ -209,6 +228,11 @@ export default function GreyBlendingKrefeld() {
               <h3 className="font-serif text-2xl mb-2 text-white">Termin anfragen - wir melden uns innerhalb von 24 Stunden.</h3>
               <p className="text-white/80 mb-8">Einfach Formular ausfüllen, Teresa meldet sich persönlich bei dir.</p>
               <form onSubmit={onSubmit} className="space-y-6">
+                <div aria-hidden="true" className="absolute -left-[10000px] top-auto w-px h-px overflow-hidden">
+                  <label htmlFor="website-krefeld">Website</label>
+                  <input id="website-krefeld" name="website" type="text" tabIndex={-1} autoComplete="off" />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="firstname" className="block text-sm font-medium text-white/80 mb-2">
@@ -280,6 +304,15 @@ export default function GreyBlendingKrefeld() {
                 >
                   {isSubmitting ? "Sende..." : "Nachricht senden"}
                 </button>
+
+                {isTurnstileEnabled && (
+                  <div
+                    className="cf-turnstile"
+                    data-sitekey={turnstileSiteKey}
+                    data-theme="light"
+                    data-size="flexible"
+                  />
+                )}
 
                 <div className="rounded-md border border-white/10 bg-black/25 p-4">
                   <p className="italic text-white/90">&quot;Ich melde mich persoenlich bei dir - versprochen.&quot;</p>
