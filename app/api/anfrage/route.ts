@@ -75,7 +75,7 @@ async function sendeBenachrichtigung(d: {
   await transporter.sendMail({
     from: MAIL_ABSENDER,
     to: MAIL_EMPFAENGER,
-    replyTo: d.email,
+    replyTo: d.email || undefined,
     subject: `Neue Anfrage: ${d.firstname} – ${d.wunsch || "Termin"}`,
     text,
   })
@@ -158,9 +158,9 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
   const email = String(body.email || "").trim()
   const wunschBehandlung = String(body.wunsch_behandlung || "").trim()
 
-  if (!firstname || !phone || !email) {
+  if (!firstname || !phone) {
     return NextResponse.json(
-      { ok: false, message: "Vorname, Telefon und E-Mail sind erforderlich." },
+      { ok: false, message: "Vorname und Telefon sind erforderlich." },
       { status: 400 },
     )
   }
@@ -186,7 +186,8 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
     return NextResponse.json({ ok: false, message: "Serverkonfiguration unvollständig." }, { status: 500 })
   }
 
-  const properties: Record<string, string> = { firstname, phone, email }
+  const properties: Record<string, string> = { firstname, phone }
+  if (email) properties.email = email
   if (lastname) properties.lastname = lastname
   if (wunschBehandlung && ERLAUBTE_FELDER.has("wunsch_behandlung")) {
     properties.wunsch_behandlung = wunschBehandlung
@@ -202,7 +203,7 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
   }
 
   try {
-    const vorhandeneId = await findeKontaktId(email)
+    const vorhandeneId = email ? await findeKontaktId(email) : null
     const contactId = vorhandeneId
       ? (await aktualisiereKontakt(vorhandeneId, properties), vorhandeneId)
       : await legeKontaktAn(properties)

@@ -3,22 +3,26 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { X } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 const DISMISS_KEY = "diebianco-exit-intent-dismissed"
 
 export default function ExitIntentHint() {
   const [visible, setVisible] = useState(false)
   const [enabled, setEnabled] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     if (typeof window === "undefined") return
+    // /kontakt hat ein eigenes, zeitgesteuertes Anruf-Popup → globales hier aus.
+    if (pathname === "/kontakt") return
 
     const isDesktop = window.matchMedia("(min-width: 1024px)").matches
     if (!isDesktop) return
 
     if (window.sessionStorage.getItem(DISMISS_KEY) === "1") return
     setEnabled(true)
-  }, [])
+  }, [pathname])
 
   useEffect(() => {
     if (!enabled) return

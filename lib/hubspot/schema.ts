@@ -93,6 +93,17 @@ export const FELDER: FeldDefinition[] = [
     pflicht: true,
     spalten: 1,
   },
+  {
+    id: "wunschzeitraum",
+    hubspotName: "wunschzeitraum",
+    label: "Wunsch-Zeitraum",
+    frage: "Wann passt es dir am besten?",
+    fieldType: "radio",
+    type: "enumeration",
+    optionen: ["Vormittags", "Nachmittags", "Samstag", "Egal"],
+    welle: 1,
+    spalten: 1,
+  },
 
   // ── Welle 2 · nur bei Farbwunsch ───────────────────────────────────────
   {

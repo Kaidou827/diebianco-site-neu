@@ -2,8 +2,13 @@
 
 import Link from "next/link"
 import { Phone } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 export default function GlobalFloatingCtas() {
+  const pathname = usePathname()
+  // /kontakt hat eine eigene Sticky-Bar (KontaktStickyBar) → globale hier ausblenden.
+  if (pathname === "/kontakt") return null
+
   return (
     <div className="fixed inset-x-0 bottom-4 z-[70] pointer-events-none px-4">
       <div className="mx-auto flex w-full max-w-7xl items-end justify-between gap-3">
