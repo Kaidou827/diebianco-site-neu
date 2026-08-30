@@ -29,6 +29,9 @@ interface AnfrageFormularProps {
   variante?: "standard" | "deep"
   theme?: "creme" | "dunkel"
   chrome?: boolean
+  /** Wenn gesetzt: nach Abschluss dorthin weiterleiten (Danke-Seite lädt →
+   *  Google-Ads-Conversion-Tag feuert). Ohne: inline "fertig"-Screen. */
+  dankeUrl?: string
 }
 
 interface AntwortZeile {
@@ -55,6 +58,7 @@ export default function AnfrageFormular({
   variante = "deep",
   theme = "creme",
   chrome = true,
+  dankeUrl,
 }: AnfrageFormularProps) {
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
   const isTurnstileEnabled = turnstileSiteKey.length > 0
@@ -123,6 +127,17 @@ export default function AnfrageFormular({
     })
   }
 
+  /** Abschluss: zur Danke-Seite weiterleiten (Conversion-Tag feuert) oder inline "fertig". */
+  const zumAbschluss = () => {
+    if (dankeUrl) {
+      const name = encodeURIComponent(daten.firstname.trim())
+      window.location.assign(`${dankeUrl}${dankeUrl.includes("?") ? "&" : "?"}name=${name}`)
+      return
+    }
+    setPhase("fertig")
+    sanftInSicht()
+  }
+
   const waehleBehandlung = (label: string) => {
     set("wunsch_behandlung", optionWert(label))
     setFehler("")
@@ -182,9 +197,13 @@ export default function AnfrageFormular({
       }
       setContactId(json.contactId)
       setZeitBeleg(new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }))
-      setPhase(phaseBFelder.length > 0 ? "b" : "fertig")
-      setBIndex(0)
-      sanftInSicht()
+      if (phaseBFelder.length > 0) {
+        setPhase("b")
+        setBIndex(0)
+        sanftInSicht()
+      } else {
+        zumAbschluss()
+      }
     } catch (err) {
       console.error(err)
       setFehler("Fehler beim Senden. Bitte erneut versuchen.")
@@ -209,8 +228,7 @@ export default function AnfrageFormular({
       setBIndex((i) => i + 1)
       sanftInSicht()
     } else {
-      setPhase("fertig")
-      sanftInSicht()
+      zumAbschluss()
     }
   }
 

@@ -113,7 +113,7 @@ export default function Kontakt() {
               </div>
               <h3 className="font-serif text-2xl mb-2 text-white">Termin anfragen - wir melden uns innerhalb von 24 Stunden.</h3>
               <p className="text-white/80 mb-8">Einfach Formular ausfüllen, Teresa meldet sich persönlich bei dir.</p>
-              <AnfrageFormular variante="standard" theme="dunkel" chrome={false} />
+              <AnfrageFormular variante="standard" theme="dunkel" chrome={false} dankeUrl="/kontakt/danke" />
 
               <div className="mt-6 rounded-md border border-white/10 bg-black/25 p-4">
                 <p className="italic text-white/90">&quot;Ich melde mich persönlich bei dir - versprochen.&quot;</p>
