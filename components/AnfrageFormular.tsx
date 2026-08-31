@@ -138,7 +138,8 @@ export default function AnfrageFormular({
 
   // Deep: Fortschritt erst NACH dem Kontakt-Schritt zeigen (davor wirkt "X/7"
   // abschreckend; der Lead ist ohnehin erst mit Welle 1 gesichert).
-  const zeigeFortschritt = variante === "standard" || phase === "b" || phase === "fertig"
+  const zeigeFortschritt =
+    (variante === "standard" || phase === "b" || phase === "fertig") && gesamtSchritte > 1
 
   const gewaehlteBehandlung = BEHANDLUNG_FELD.optionen!.find((l) => optionWert(l) === daten.wunsch_behandlung) || ""
 

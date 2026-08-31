@@ -5,6 +5,7 @@ import Link from "next/link"
 import Navigation from "@/components/Navigation"
 import { Shirt, Palette, Sparkles, Scissors, Heart, Users } from "lucide-react"
 import SiteFooter from "@/components/SiteFooter"
+import TerminSektion from "@/components/TerminSektion"
 
 export default function StilberatungPage() {
   return (
@@ -40,7 +41,7 @@ export default function StilberatungPage() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  href="/kontakt"
+                  href="#kontakt-formular"
                   className="inline-flex justify-center items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
                 >
                   Jetzt Termin vereinbaren
@@ -325,7 +326,7 @@ export default function StilberatungPage() {
                 Vereinbaren Sie jetzt einen Termin und entdecken Sie Ihren authentischen Stil.
               </p>
               <Link
-                href="/kontakt"
+                href="#kontakt-formular"
                 className="inline-flex justify-center items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
               >
                 Jetzt Termin vereinbaren
@@ -336,6 +337,8 @@ export default function StilberatungPage() {
       </section>
 
       {/* Footer - Exact same as farbtypologie page */}
+      <TerminSektion behandlung="Beratungsgespräch" titel="Stilberatung anfragen" />
+
       <SiteFooter />
     </div>
   )

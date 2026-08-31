@@ -5,6 +5,7 @@ import Link from "next/link"
 import Navigation from "@/components/Navigation"
 import { ArrowRight } from "lucide-react"
 import SiteFooter from "@/components/SiteFooter"
+import TerminSektion from "@/components/TerminSektion"
 
 export default function GreyBlendingPage() {
   return (
@@ -250,6 +251,8 @@ export default function GreyBlendingPage() {
       </section>
 
       {/* Footer */}
+      <TerminSektion behandlung="Grey Blending" titel="Grey-Blending-Termin anfragen" />
+
       <SiteFooter />
     </div>
   )

@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import Navigation from "@/components/Navigation"
 import SiteFooter from "@/components/SiteFooter"
+import TerminSektion from "@/components/TerminSektion"
 
 export default function FarbtypologiePage() {
   return (
@@ -39,7 +40,7 @@ export default function FarbtypologiePage() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  href="/kontakt"
+                  href="#kontakt-formular"
                   className="inline-flex justify-center items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
                 >
                   Jetzt Termin vereinbaren
@@ -177,7 +178,7 @@ export default function FarbtypologiePage() {
                 Vereinbare jetzt einen Termin und entdecke, welche Farben dich zum Strahlen bringen.
               </p>
               <Link
-                href="/kontakt"
+                href="#kontakt-formular"
                 className="inline-flex justify-center items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
               >
                 Jetzt Termin vereinbaren
@@ -188,6 +189,8 @@ export default function FarbtypologiePage() {
       </section>
 
       {/* Footer */}
+      <TerminSektion behandlung="Farbe / Ansatz" titel="Farbtypologie-Beratung anfragen" />
+
       <SiteFooter />
     </div>
   )

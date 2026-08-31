@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import Navigation from "@/components/Navigation"
 import SiteFooter from "@/components/SiteFooter"
+import TerminSektion from "@/components/TerminSektion"
 
 export default function SchnitttechnikenPage() {
   return (
@@ -42,7 +43,7 @@ export default function SchnitttechnikenPage() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  href="/kontakt"
+                  href="#kontakt-formular"
                   className="inline-flex justify-center items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
                 >
                   Jetzt Termin vereinbaren
@@ -176,7 +177,7 @@ export default function SchnitttechnikenPage() {
                 Vereinbare jetzt einen Termin und entdecke, welcher Schnitt perfekt zu dir passt.
               </p>
               <Link
-                href="/kontakt"
+                href="#kontakt-formular"
                 className="inline-flex justify-center items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
               >
                 Jetzt Termin vereinbaren
@@ -187,6 +188,8 @@ export default function SchnitttechnikenPage() {
       </section>
 
       {/* Footer */}
+      <TerminSektion behandlung="Schnitt & Styling" titel="Schnitt-Termin anfragen" />
+
       <SiteFooter />
     </div>
   )

@@ -8,6 +8,7 @@ import Image from "next/image"
 import Link from "next/link"
 import Navigation from "@/components/Navigation"
 import SiteFooter from "@/components/SiteFooter"
+import TerminSektion from "@/components/TerminSektion"
 
 export default function HautdiagnostikPage() {
   return (
@@ -45,7 +46,7 @@ export default function HautdiagnostikPage() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  href="/kontakt"
+                  href="#kontakt-formular"
                   className="inline-flex justify-center items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
                 >
                   Jetzt Termin vereinbaren
@@ -184,7 +185,7 @@ export default function HautdiagnostikPage() {
                 Vereinbare jetzt einen Termin und entdecke, wie die richtige Pflege deine Haut zum Strahlen bringt.
               </p>
               <Link
-                href="/kontakt"
+                href="#kontakt-formular"
                 className="inline-flex justify-center items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
               >
                 Jetzt Termin vereinbaren
@@ -195,6 +196,8 @@ export default function HautdiagnostikPage() {
       </section>
 
       {/* Footer */}
+      <TerminSektion behandlung="Beratungsgespräch" titel="Hautdiagnostik-Termin anfragen" />
+
       <SiteFooter />
     </div>
   )
