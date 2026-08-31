@@ -1,434 +1,202 @@
-"use client"
-
-import type React from "react"
-
 import Image from "next/image"
-import Script from "next/script"
-import { Mail, MapPin, Phone, Clock, CheckCircle } from "lucide-react"
+import { MapPin, Phone, Mail, Clock } from "lucide-react"
 import Navigation from "@/components/Navigation"
-import { useState } from "react"
 import SiteFooter from "@/components/SiteFooter"
+import AnfrageFormular from "@/components/AnfrageFormular"
+import TeresaVideo from "@/components/TeresaVideo"
+import AnrufCta from "@/components/kontakt/AnrufCta"
+import KontaktStickyBar from "@/components/kontakt/KontaktStickyBar"
+import AnrufPopup from "@/components/kontakt/AnrufPopup"
+import {
+  salonTelefon,
+  salonTelefonHref,
+  salonEmail,
+  salonAdresse,
+  oeffnungszeitenKompakt,
+} from "@/lib/site-info"
+
+function Sterne() {
+  return (
+    <span className="inline-flex text-[#E4A93C]" aria-hidden="true">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <svg key={i} viewBox="0 0 20 20" className="h-4 w-4 fill-current">
+          <path d="M10 1.6l2.47 5.006 5.526.803-4 3.9.944 5.503L10 14.2l-4.94 2.612.944-5.503-4-3.9 5.526-.803L10 1.6z" />
+        </svg>
+      ))}
+    </span>
+  )
+}
+
+const testimonials = [
+  {
+    name: "Katja E.",
+    text: "Absolute Spitzenklasse – ein Salon, den ich von Herzen weiterempfehle. Ich habe ohne Zweifel den schönsten Haarschnitt meines Lebens erhalten.",
+  },
+  {
+    name: "N. Hales",
+    text: "Wer einmal dort war, wird nie wieder zu einem anderen Salon gehen. Absolute Profis, das ganze Team.",
+  },
+  {
+    name: "Sophia K.",
+    text: "Meinen Friseur des Vertrauens hab ich gefunden! Man fühlt sich super wohl und verbringt dort gerne seine Zeit.",
+  },
+]
+
+const vorherNachher = [
+  { vorher: "/kunde-1-vorher.jpg", nachher: "/kunde-1-nachher.jpg" },
+  { vorher: "/kunde-2-vorher.jpg", nachher: "/kunde-2-nachher.jpg" },
+]
 
 export default function GreyBlendingKrefeld() {
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
-  const isTurnstileEnabled = turnstileSiteKey.length > 0
-
-  const [formData, setFormData] = useState({
-    firstname: "",
-    email: "",
-    phone: "",
-    message: "",
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitMessage, setSubmitMessage] = useState("")
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
-
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const form = e.currentTarget as HTMLFormElement
-    const honeypotValue = (form.querySelector('input[name="website"]') as HTMLInputElement | null)?.value || ""
-    const turnstileToken =
-      (form.querySelector('input[name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || ""
-    setIsSubmitting(true)
-    setSubmitMessage("Sende...")
-
-    try {
-      // Validate required fields
-      if (!formData.firstname || !formData.email || !formData.phone) {
-        setSubmitMessage("Name, E-Mail und Telefon sind erforderlich.")
-        setIsSubmitting(false)
-        return
-      }
-
-      if (isTurnstileEnabled && !turnstileToken) {
-        setSubmitMessage("Bitte CAPTCHA-Validierung abschliessen.")
-        setIsSubmitting(false)
-        return
-      }
-
-      // Get HubSpot tracking cookie if available
-      let hutk = ""
-      try {
-        const hubspotCookie = document.cookie.split("; ").find((row) => row.startsWith("hubspotutk="))
-        if (hubspotCookie) {
-          hutk = hubspotCookie.split("=")[1]
-        }
-      } catch (e) {
-        console.log("Could not get HubSpot cookie:", e)
-      }
-
-      const payload = {
-        firstname: formData.firstname,
-        email: formData.email,
-        phone: formData.phone,
-        message: formData.message,
-        pageUri: window.location.href,
-        pageName: document.title,
-        hutk: hutk || undefined,
-        honeypot: honeypotValue,
-        turnstileToken: isTurnstileEnabled ? turnstileToken : undefined,
-        spamProtectionRequired: isTurnstileEnabled,
-      }
-
-      // Submit to HubSpot API
-      const response = await fetch("/api/hubspot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-
-      let json: { ok: boolean; message: string }
-      if (response.headers.get("content-type")?.includes("application/json")) {
-        json = await response.json()
-      } else {
-        const txt = await response.text()
-        throw new Error(`Unerwartete Antwort: ${txt}`)
-      }
-
-      if (json.ok) {
-        const encodedName = encodeURIComponent(formData.firstname.trim())
-        setFormData({
-          firstname: "",
-          email: "",
-          phone: "",
-          message: "",
-        })
-        form.reset()
-        window.location.assign(`/kontakt/danke?name=${encodedName}`)
-        return
-      } else {
-        console.error("Form submission failed:", json)
-        setSubmitMessage(json.message || "Fehler beim Senden der Nachricht.")
-      }
-    } catch (error) {
-      console.error("Form submission error:", error)
-      setSubmitMessage("Fehler beim Senden der Nachricht.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   return (
-    <div className="bg-[#b4b1aa] text-white min-h-screen">
-      {isTurnstileEnabled && (
-        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
-      )}
-      {/* Standardized Navigation Component */}
+    <div className="bg-[#b4b1aa] text-white min-h-screen pb-24 md:pb-0">
       <Navigation />
 
-      {/* Contact Form Section - Now at the top */}
-      <section className="py-16 md:py-20 bg-[#b4b1aa] relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+      <main className="container mx-auto px-4 md:px-6">
+        {/* HERO */}
+        <section className="pt-10 md:pt-16 pb-6 text-center max-w-2xl mx-auto">
+          <h1 className="font-serif text-3xl md:text-5xl tracking-tight leading-tight">
+            Grey Blending <span className="text-[#D4C6A6]">in Krefeld</span>
+          </h1>
+          <p className="mt-3 text-lg text-white/85">
+            Dein Grau modern, weich und natürlich integriert – unverbindlich anfragen, Teresa berät dich persönlich.
+          </p>
+          <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-medium text-[#2C2C2C] shadow-sm">
+            <Sterne />
+            5,0 · 16 Google-Bewertungen
+          </p>
+        </section>
 
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
-          <div className="max-w-3xl mx-auto text-center mb-12">
-            <h1 className="font-serif text-3xl md:text-5xl tracking-tight mb-6 leading-tight">
-              Grey Blending <span className="text-[rgb(212,198,166)]">in Krefeld</span>
-            </h1>
-            <p className="text-lg md:text-xl text-white/80 leading-relaxed max-w-2xl mx-auto">
-              Vereinbare deinen persönlichen Beratungstermin und entdecke deinen individuellen Grey Blending Look.
-            </p>
+        {/* FORMULAR (Deep, Grey Blending vorausgewählt) */}
+        <section id="kontakt-formular" className="scroll-mt-24 pb-14">
+          <div className="mx-auto max-w-2xl rounded-2xl bg-[#F5F1E8] p-6 md:p-8 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] ring-1 ring-black/5">
+            <h2 className="font-serif text-2xl text-[#2C2C2C]">Grey-Blending-Termin anfragen</h2>
+            <p className="mt-1 mb-5 text-[#5b5346]">Ein paar kurze Fragen – so kann Teresa deinen Look direkt einschätzen.</p>
+            <AnfrageFormular
+              variante="deep"
+              theme="hell"
+              chrome={false}
+              vorauswahlBehandlung="Grey Blending"
+              dankeUrl="/kontakt/danke"
+            />
+            <div className="mt-5 border-t border-black/10 pt-4">
+              <AnrufCta />
+            </div>
           </div>
+        </section>
 
-          <div className="max-w-3xl mx-auto mb-10 text-center">
-            <p className="inline-flex items-center justify-center rounded-full bg-white/70 px-5 py-2 text-sm md:text-base text-[#2C2C2C]">
-              <span className="text-[#D4C6A6] mr-2">⭐⭐⭐⭐⭐</span>
-              5,0 von 5 · 16 Google Bewertungen (Stand Mai 2026)
-            </p>
-          </div>
+        {/* VIDEO */}
+        <section className="pb-14 max-w-3xl mx-auto text-center">
+          <h2 className="font-serif text-2xl md:text-3xl mb-2">Lern mich kennen</h2>
+          <p className="text-white/80 mb-6">Ein kurzer Einblick, wie Teresa arbeitet und was dich erwartet.</p>
+          <TeresaVideo />
+        </section>
 
-          <div className="max-w-5xl mx-auto mb-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
-              <div className="w-full max-w-[480px] rounded-md border border-white/10 bg-black/15 p-4">
+        {/* VORHER / NACHHER */}
+        <section className="pb-14 max-w-5xl mx-auto">
+          <h2 className="font-serif text-2xl md:text-3xl mb-6 text-center">Grey-Blending-Ergebnisse</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {vorherNachher.map((paar, idx) => (
+              <div key={idx} className="rounded-xl bg-white p-3 shadow-md">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <div className="relative h-52 rounded-md overflow-hidden">
-                      <Image src="/kunde-1-vorher.jpg" alt="Kunde 1 Vorher" fill className="object-cover" />
+                    <div className="relative h-56 rounded-lg overflow-hidden">
+                      <Image src={paar.vorher} alt="Vorher" fill className="object-cover" />
                     </div>
-                    <p className="mt-2 text-center text-sm text-[#D4C6A6]">Vorher</p>
+                    <p className="mt-2 text-center text-sm font-medium text-[#8a6420]">Vorher</p>
                   </div>
                   <div>
-                    <div className="relative h-52 rounded-md overflow-hidden">
-                      <Image src="/kunde-1-nachher.jpg" alt="Kunde 1 Nachher" fill className="object-cover" />
+                    <div className="relative h-56 rounded-lg overflow-hidden">
+                      <Image src={paar.nachher} alt="Nachher" fill className="object-cover" />
                     </div>
-                    <p className="mt-2 text-center text-sm text-[#D4C6A6]">Nachher</p>
+                    <p className="mt-2 text-center text-sm font-medium text-[#8a6420]">Nachher</p>
                   </div>
                 </div>
               </div>
+            ))}
+          </div>
+        </section>
 
-              <div className="w-full max-w-[480px] rounded-md border border-white/10 bg-black/15 p-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="relative h-52 rounded-md overflow-hidden">
-                      <Image src="/kunde-2-vorher.jpg" alt="Kunde 2 Vorher" fill className="object-cover" />
-                    </div>
-                    <p className="mt-2 text-center text-sm text-[#D4C6A6]">Vorher</p>
-                  </div>
-                  <div>
-                    <div className="relative h-52 rounded-md overflow-hidden">
-                      <Image src="/kunde-2-nachher.jpg" alt="Kunde 2 Nachher" fill className="object-cover" />
-                    </div>
-                    <p className="mt-2 text-center text-sm text-[#D4C6A6]">Nachher</p>
-                  </div>
+        {/* TESTIMONIALS */}
+        <section className="pb-14 max-w-5xl mx-auto">
+          <h2 className="font-serif text-2xl md:text-3xl mb-6 text-center">Das sagen Kundinnen</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {testimonials.map((t) => (
+              <div key={t.name} className="rounded-xl bg-white p-5 text-center shadow-md">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Sterne />
                 </div>
+                <p className="text-[#2C2C2C] text-sm leading-relaxed">&quot;{t.text}&quot;</p>
+                <p className="mt-3 text-sm font-semibold text-[#2C2C2C]">{t.name}</p>
               </div>
-            </div>
+            ))}
           </div>
+        </section>
 
-          <div className="max-w-6xl mx-auto mb-12">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 justify-items-center">
-              <div className="w-full max-w-sm rounded-md border border-white/10 bg-black/20 p-5 text-center">
-                <p className="text-[#D4C6A6] text-sm mb-2">Katja E. · ★★★★★</p>
-                <p className="text-white/90 text-sm leading-relaxed">
-                  &quot;Absolute Spitzenklasse - ein Salon, den ich von Herzen weiterempfehle. Ich habe ohne Zweifel den
-                  schönsten Haarschnitt meines Lebens erhalten.&quot;
-                </p>
-              </div>
-              <div className="w-full max-w-sm rounded-md border border-white/10 bg-black/20 p-5 text-center">
-                <p className="text-[#D4C6A6] text-sm mb-2">N. Hales · ★★★★★</p>
-                <p className="text-white/90 text-sm leading-relaxed">
-                  &quot;Wer einmal dort war, wird nie wieder zu einem anderen Salon gehen. Absolute Profis das ganze Team.&quot;
-                </p>
-              </div>
-              <div className="w-full max-w-sm rounded-md border border-white/10 bg-black/20 p-5 text-center">
-                <p className="text-[#D4C6A6] text-sm mb-2">Sophia K. · ★★★★★</p>
-                <p className="text-white/90 text-sm leading-relaxed">
-                  &quot;Meinen Friseur des Vertrauens hab ich gefunden! Man fühlt sich super wohl und verbringt dort gerne
-                  seine Zeit.&quot;
+        {/* KONTAKTINFO */}
+        <section className="pb-10 max-w-3xl mx-auto">
+          <h2 className="font-serif text-2xl md:text-3xl mb-6 text-center">Kontakt & Öffnungszeiten</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-black/20">
+                <MapPin className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="font-serif text-lg">Adresse</h3>
+                <p className="text-white/85">
+                  {salonAdresse.strasse}
+                  <br />
+                  {salonAdresse.ort}
                 </p>
               </div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start">
-            {/* Contact Form - Now with black/20 blur effect */}
-            <div
-              id="kontakt-formular"
-              className="lg:col-span-3 backdrop-blur-md bg-black/20 rounded-md p-8 md:p-10 shadow-[0_20px_70px_-15px_rgba(0,0,0,0.1)] border border-white/10"
-            >
-              <div className="mb-6 rounded-md border border-white/10 bg-black/25 p-4">
-                <p className="text-sm text-white/80 mb-3">Du erreichst uns Mo–Fr von 09:00 bis 17:00 Uhr und Sa von 07:00 bis 14:00 Uhr.</p>
-                <a
-                  href="tel:+491743091973"
-                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] transition-all duration-300"
-                >
-                  Lieber anrufen? +49 174 3091973
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-black/20">
+                <Phone className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="font-serif text-lg">Telefon</h3>
+                <a href={salonTelefonHref} className="text-white/85 hover:text-white transition-colors">
+                  {salonTelefon}
                 </a>
               </div>
-              <h3 className="font-serif text-2xl mb-2 text-white">Termin anfragen - wir melden uns innerhalb von 24 Stunden.</h3>
-              <p className="text-white/80 mb-8">Einfach Formular ausfüllen, Teresa meldet sich persönlich bei dir.</p>
-              <form onSubmit={onSubmit} className="space-y-6">
-                <div aria-hidden="true" className="absolute -left-[10000px] top-auto w-px h-px overflow-hidden">
-                  <label htmlFor="website-krefeld">Website</label>
-                  <input id="website-krefeld" name="website" type="text" tabIndex={-1} autoComplete="off" />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="firstname" className="block text-sm font-medium text-white/80 mb-2">
-                      Name *
-                    </label>
-                    <input
-                      id="firstname"
-                      name="firstname"
-                      type="text"
-                      value={formData.firstname}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 rounded-md border border-white/10 bg-black/20 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all placeholder-white/50"
-                      placeholder="Ihr Name"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-white/80 mb-2">
-                      E-Mail *
-                    </label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 rounded-md border border-white/10 bg-black/20 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all placeholder-white/50"
-                      placeholder="Ihre E-Mail"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-white/80 mb-2">
-                    Telefon *
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 rounded-md border border-white/10 bg-black/20 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all placeholder-white/50"
-                    placeholder="+49 …"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-white/80 mb-2">
-                    Nachricht
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows={5}
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-md border border-white/10 bg-black/20 text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all resize-none placeholder-white/50"
-                    placeholder="Ihre Nachricht an uns"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg disabled:opacity-50"
-                >
-                  {isSubmitting ? "Sende..." : "Nachricht senden"}
-                </button>
-
-                {isTurnstileEnabled && (
-                  <div
-                    className="cf-turnstile"
-                    data-sitekey={turnstileSiteKey}
-                    data-theme="light"
-                    data-size="flexible"
-                  />
-                )}
-
-                <div className="rounded-md border border-white/10 bg-black/25 p-4">
-                  <p className="italic text-white/90">&quot;Ich melde mich persönlich bei dir - versprochen.&quot;</p>
-                  <p className="mt-1 text-sm text-[#D4C6A6]">- Teresa Bianco</p>
-                  <ul className="mt-4 space-y-2 text-sm text-white/85">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-[#D4C6A6]" />
-                      Persönliche Beratung
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-[#D4C6A6]" />
-                      Antwort innerhalb von 24h
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-[#D4C6A6]" />
-                      Keine Verpflichtung
-                    </li>
-                  </ul>
-                </div>
-              </form>
-              {submitMessage && (
-                <div
-                  className={`mt-4 p-3 rounded-md text-center ${
-                    submitMessage.includes("Danke")
-                      ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                      : "bg-red-500/20 text-red-300 border border-red-500/30"
-                  }`}
-                >
-                  {submitMessage}
-                </div>
-              )}
             </div>
-
-            {/* Contact Info - Now spans 2 columns */}
-            <div className="lg:col-span-2">
-              <h2 className="font-serif text-2xl md:text-3xl tracking-tight mb-6 text-white">Kontaktinformationen</h2>
-
-              <div className="space-y-6">
-                {/* Address */}
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-black/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 rounded-md">
-                    <MapPin className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-serif text-lg mb-1 text-white">Adresse</h3>
-                    <p className="text-white/80">
-                      Siedlung Egelsberg 1<br />
-                      47802 Krefeld
-                    </p>
-                  </div>
-                </div>
-
-                {/* Phone */}
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-black/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 rounded-md">
-                    <Phone className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-serif text-lg mb-1 text-white">Telefon</h3>
-                    <p className="text-white/80">
-                      <a href="tel:+491743091973" className="hover:text-white transition-colors">
-                        +49 174 3091973
-                      </a>
-                    </p>
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-black/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 rounded-md">
-                    <Mail className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-serif text-lg mb-1 text-white">E-Mail</h3>
-                    <p className="text-white/80">
-                      <a href="mailto:salon@diebianco.de" className="hover:text-white transition-colors">
-                        salon@diebianco.de
-                      </a>
-                    </p>
-                  </div>
-                </div>
-
-                {/* Opening Hours */}
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-black/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 rounded-md">
-                    <Clock className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-serif text-lg mb-1 text-white">Öffnungszeiten</h3>
-                    <div className="text-white/80 space-y-1">
-                      <p>Mo - Fr: 09:00 - 17:00 Uhr</p>
-                      <p>Sa: 07:00 - 14:00 Uhr</p>
-                      <p>So: Geschlossen</p>
-                      <p className="text-sm italic mt-2">Termine nach Vereinbarung</p>
-                    </div>
-                  </div>
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-black/20">
+                <Mail className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="font-serif text-lg">E-Mail</h3>
+                <a href={`mailto:${salonEmail}`} className="text-white/85 hover:text-white transition-colors">
+                  {salonEmail}
+                </a>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-black/20">
+                <Clock className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="font-serif text-lg">Öffnungszeiten</h3>
+                <div className="text-white/85 space-y-0.5">
+                  {oeffnungszeitenKompakt.map((z) => (
+                    <p key={z}>{z}</p>
+                  ))}
+                  <p className="text-sm italic mt-1 text-white/70">Termine nach Vereinbarung</p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Map Section */}
-      <section className="py-16 bg-[#b4b1aa] relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-
-        <div className="container px-4 md:px-6">
-          <h2 className="font-serif text-2xl md:text-3xl tracking-tight mb-8 text-center text-white">Unser Standort</h2>
-          <div className="w-full h-[400px] bg-black/20 backdrop-blur-sm rounded-md overflow-hidden shadow-md border border-white/10">
+        {/* KARTE */}
+        <section className="pb-16 max-w-5xl mx-auto">
+          <div className="h-[300px] md:h-[420px] w-full overflow-hidden rounded-xl border border-white/10 shadow-md">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2492.2544250563367!2d6.564700!3d51.364700!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47b8a5c3d3a59bfb%3A0x27760c42a68b0214!2sSiedlung%20Egelsberg%201%2C%2047802%20Krefeld!5e0!3m2!1sde!2sde!4v1653389089123!5m2!1sde!2sde"
               width="100%"
               height="100%"
-              style={{ border: 0 }}
+              style={{ border: 0, display: "block" }}
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
@@ -436,11 +204,12 @@ export default function GreyBlendingKrefeld() {
               aria-label="Karte zum Standort des DIE BIANCO Salons"
             ></iframe>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* Footer - Same as other pages */}
       <SiteFooter />
+      <KontaktStickyBar />
+      <AnrufPopup />
     </div>
   )
 }

@@ -6,8 +6,9 @@ import { usePathname } from "next/navigation"
 
 export default function GlobalFloatingCtas() {
   const pathname = usePathname()
-  // /kontakt hat eine eigene Sticky-Bar (KontaktStickyBar) → globale hier ausblenden.
-  if (pathname === "/kontakt") return null
+  // Landingpages mit eigener Sticky-Bar (KontaktStickyBar) → globale hier ausblenden.
+  const eigeneCtaSeiten = ["/kontakt", "/grey-blending-krefeld", "/grey-blending-beratung"]
+  if (eigeneCtaSeiten.includes(pathname)) return null
 
   return (
     <div className="fixed inset-x-0 bottom-4 z-[70] pointer-events-none px-4">

@@ -14,8 +14,8 @@ export default function ExitIntentHint() {
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    // /kontakt hat ein eigenes, zeitgesteuertes Anruf-Popup → globales hier aus.
-    if (pathname === "/kontakt") return
+    // Landingpages mit eigenem, zeitgesteuertem Anruf-Popup → globales hier aus.
+    if (["/kontakt", "/grey-blending-krefeld", "/grey-blending-beratung"].includes(pathname)) return
 
     const isDesktop = window.matchMedia("(min-width: 1024px)").matches
     if (!isDesktop) return

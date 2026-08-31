@@ -33,7 +33,14 @@ interface AnfrageFormularProps {
   theme?: "creme" | "dunkel" | "hell"
   chrome?: boolean
   dankeUrl?: string
+  /** Behandlung vorauswählen (z. B. "Grey Blending") → Schritt 1 wird übersprungen. */
+  vorauswahlBehandlung?: string
 }
+
+// Foto-Upload ist noch nicht an die HubSpot Files API angebunden (Roadmap-Schritt).
+// Bis dahin wird der Foto-Schritt aus Phase B ausgeblendet, statt einen
+// nicht-funktionierenden Datei-Upload zu zeigen.
+const FOTO_UPLOAD_AKTIV = false
 
 interface AntwortZeile {
   frageKurz: string
@@ -74,12 +81,15 @@ export default function AnfrageFormular({
   theme = "creme",
   chrome = true,
   dankeUrl,
+  vorauswahlBehandlung,
 }: AnfrageFormularProps) {
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
   const isTurnstileEnabled = turnstileSiteKey.length > 0
   const istDeep = variante === "deep"
+  const vorauswahlWert = vorauswahlBehandlung ? optionWert(vorauswahlBehandlung) : ""
+  const vorausgewaehlt = Boolean(vorauswahlWert)
 
-  const [phase, setPhase] = useState<Phase>("behandlung")
+  const [phase, setPhase] = useState<Phase>(vorausgewaehlt ? "kontakt" : "behandlung")
   const [bIndex, setBIndex] = useState(0)
   const [contactId, setContactId] = useState("")
   const [zeitBeleg, setZeitBeleg] = useState("")
@@ -89,7 +99,7 @@ export default function AnfrageFormular({
   const [sichtbar, setSichtbar] = useState(false)
 
   const [daten, setDaten] = useState<Record<string, string>>({
-    wunsch_behandlung: "",
+    wunsch_behandlung: vorauswahlWert,
     firstname: "",
     lastname: "",
     phone: "",
@@ -103,13 +113,28 @@ export default function AnfrageFormular({
   const istFarbe = FARB_WERTE.has(daten.wunsch_behandlung)
 
   const phaseBFelder = useMemo<FeldDefinition[]>(
-    () => (istDeep ? FORMULAR_FELDER.filter((f) => f.welle === 2 && (!f.nurBeiFarbe || istFarbe)) : []),
+    () =>
+      istDeep
+        ? FORMULAR_FELDER.filter(
+            (f) =>
+              f.welle === 2 &&
+              (!f.nurBeiFarbe || istFarbe) &&
+              (FOTO_UPLOAD_AKTIV || f.fieldType !== "file"),
+          )
+        : [],
     [istFarbe, istDeep],
   )
 
-  const gesamtSchritte = 2 + phaseBFelder.length
+  const kontaktSchritt = vorausgewaehlt ? 1 : 2
+  const gesamtSchritte = kontaktSchritt + phaseBFelder.length
   const aktuellerSchritt =
-    phase === "behandlung" ? 1 : phase === "kontakt" ? 2 : phase === "b" ? 3 + bIndex : gesamtSchritte + 1
+    phase === "behandlung"
+      ? 1
+      : phase === "kontakt"
+        ? kontaktSchritt
+        : phase === "b"
+          ? kontaktSchritt + 1 + bIndex
+          : gesamtSchritte + 1
 
   const gewaehlteBehandlung = BEHANDLUNG_FELD.optionen!.find((l) => optionWert(l) === daten.wunsch_behandlung) || ""
 
@@ -356,7 +381,7 @@ export default function AnfrageFormular({
                 <input id="db-website" name="website" type="text" tabIndex={-1} autoComplete="off" />
               </div>
 
-              {gewaehlteBehandlung && (
+              {gewaehlteBehandlung && !vorausgewaehlt && (
                 <div className="db-gewaehlt">
                   <span><strong>{gewaehlteBehandlung}</strong> ausgewählt</span>
                   <button type="button" className="db-aendern" onClick={() => setPhase("behandlung")}>
