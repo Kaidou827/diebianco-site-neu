@@ -37,8 +37,8 @@ export default function ErgebnissePage() {
             Echte Kundenergebnisse aus dem Salon - von Grey Blending bis Blond, Balayage und Farbveredelungen.
           </p>
           <p className="inline-flex items-center justify-center rounded-full bg-white/70 px-5 py-2 text-sm md:text-base text-[#2C2C2C]">
-            <span className="text-[#D4C6A6] mr-2">⭐⭐⭐⭐⭐</span>
-            5,0 von 5 Sternen bei Google
+            <span className="text-[#D4C6A6] mr-2">★★★★★</span>
+            5,0 · 37 Google-Bewertungen
           </p>
         </div>
       </section>

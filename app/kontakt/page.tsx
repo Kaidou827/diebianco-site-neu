@@ -64,7 +64,7 @@ export default function Kontakt() {
           </p>
           <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-medium text-[#2C2C2C] shadow-sm">
             <Sterne />
-            5,0 von 5 bei Google
+            5,0 · 37 Google-Bewertungen
           </p>
         </section>
 

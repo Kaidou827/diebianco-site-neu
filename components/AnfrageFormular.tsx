@@ -136,6 +136,10 @@ export default function AnfrageFormular({
           ? kontaktSchritt + 1 + bIndex
           : gesamtSchritte + 1
 
+  // Deep: Fortschritt erst NACH dem Kontakt-Schritt zeigen (davor wirkt "X/7"
+  // abschreckend; der Lead ist ohnehin erst mit Welle 1 gesichert).
+  const zeigeFortschritt = variante === "standard" || phase === "b" || phase === "fertig"
+
   const gewaehlteBehandlung = BEHANDLUNG_FELD.optionen!.find((l) => optionWert(l) === daten.wunsch_behandlung) || ""
 
   useEffect(() => {
@@ -298,26 +302,34 @@ export default function AnfrageFormular({
         {/* Kopf: Fortschritt + Rating */}
         <div className="db-kopf">
           <div className="db-kopf-zeile">
-            <span className="db-eyebrow">✦ In unter 1 Minute · unverbindlich</span>
+            <span className="db-eyebrow">
+              {istDeep ? "✦ Unverbindlich · Antwort in 24h" : "✦ In unter 1 Minute · unverbindlich"}
+            </span>
             <span className="db-rating">
               <Sterne />
-              <strong>5,0</strong> bei Google
+              <strong>5,0</strong> · 37 bei Google
             </span>
           </div>
-          <div className="db-fortschritt" aria-hidden="true">
-            {Array.from({ length: gesamtSchritte }).map((_, i) => {
-              const n = i + 1
-              const cls = n < aktuellerSchritt ? "db-erledigt" : n === aktuellerSchritt ? "db-jetzt" : "db-offen"
-              return (
-                <span key={n} className={`db-kreis ${cls}`}>
-                  {n < aktuellerSchritt ? "✓" : n}
-                </span>
-              )
-            })}
-            <span className="db-schritt-label">
-              {phase === "fertig" ? "Geschafft! 🎉" : `Schritt ${Math.min(aktuellerSchritt, gesamtSchritte)}/${gesamtSchritte}`}
-            </span>
-          </div>
+          {zeigeFortschritt && (
+            <div className="db-fortschritt" aria-hidden="true">
+              {Array.from({ length: gesamtSchritte }).map((_, i) => {
+                const n = i + 1
+                const cls = n < aktuellerSchritt ? "db-erledigt" : n === aktuellerSchritt ? "db-jetzt" : "db-offen"
+                return (
+                  <span key={n} className={`db-kreis ${cls}`}>
+                    {n < aktuellerSchritt ? "✓" : n}
+                  </span>
+                )
+              })}
+              <span className="db-schritt-label">
+                {phase === "fertig"
+                  ? "Geschafft! 🎉"
+                  : istDeep && phase === "b"
+                    ? "Freiwillig – nur noch kurze Fragen"
+                    : `Schritt ${Math.min(aktuellerSchritt, gesamtSchritte)}/${gesamtSchritte}`}
+              </span>
+            </div>
+          )}
         </div>
 
         {(phase === "b" || phase === "fertig") && (
