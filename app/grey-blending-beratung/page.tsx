@@ -112,13 +112,13 @@ export default function GreyBlendingBeratungPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="relative h-64 rounded-lg overflow-hidden">
-                  <Image src="/ergebnisse/look01-vorher.webp" alt="Grey Blending Vorher" fill className="object-cover" />
+                  <Image src="/ergebnisse/grey-blending-1-vorher.jpg" alt="Grey Blending Vorher" fill className="object-cover" />
                 </div>
                 <p className="mt-2 text-center text-sm font-medium text-[#8a6420]">Vorher</p>
               </div>
               <div>
                 <div className="relative h-64 rounded-lg overflow-hidden">
-                  <Image src="/ergebnisse/look01-nachher.webp" alt="Grey Blending Nachher" fill className="object-cover" />
+                  <Image src="/ergebnisse/grey-blending-1-nachher.jpg" alt="Grey Blending Nachher" fill className="object-cover" />
                 </div>
                 <p className="mt-2 text-center text-sm font-medium text-[#8a6420]">Nachher</p>
               </div>

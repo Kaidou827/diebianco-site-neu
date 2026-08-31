@@ -6,13 +6,14 @@ import Navigation from "@/components/Navigation"
 import SiteFooter from "@/components/SiteFooter"
 
 const results = [
-  { category: "Grey Blending", label: "Look A · Vorher", src: "/ergebnisse/look01-vorher.webp" },
-  { category: "Grey Blending", label: "Look A · Nachher", src: "/ergebnisse/look01-nachher.webp" },
-  { category: "Grey Blending", label: "Look B · Nachher", src: "/ergebnisse/look08-nachher.webp" },
-  { category: "Grey Blending", label: "Look C · Nachher", src: "/ergebnisse/look09-nachher.webp" },
-  { category: "Grey Blending", label: "Look D · Nachher", src: "/ergebnisse/look10-nachher.webp" },
+  { category: "Grey Blending", label: "Vorher", src: "/ergebnisse/grey-blending-1-vorher.jpg" },
+  { category: "Grey Blending", label: "Nachher", src: "/ergebnisse/grey-blending-1-nachher.jpg" },
+  { category: "Grey Blending", label: "Nachher", src: "/ergebnisse/grey-blending-2-nachher.jpg" },
+  { category: "Grey Blending", label: "Nachher", src: "/ergebnisse/grey-blending-3-nachher.jpg" },
+  { category: "Grey Blending", label: "Nachher", src: "/ergebnisse/grey-blending-4-nachher.jpg" },
+  { category: "Balayage", label: "Nachher", src: "/ergebnisse/balayage-1-nachher.jpg" },
+  { category: "Balayage", label: "Nachher", src: "/ergebnisse/balayage-2-nachher.jpg" },
   { category: "Blond", label: "Look Blond", src: "/ergebnisse/look02-blond-nachher.webp" },
-  { category: "Balayage", label: "Look Balayage", src: "/ergebnisse/look07-balayage-nachher.webp" },
   { category: "Farbe", label: "Look Kupfer", src: "/ergebnisse/look11-kupfer-nachher.webp" },
 ]
 

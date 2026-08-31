@@ -186,13 +186,13 @@ export default function GreyBlendingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div className="relative h-60 rounded-md overflow-hidden">
-                    <Image src="/ergebnisse/look01-vorher.webp" alt="Kupferrot Vorher" fill className="object-cover" />
+                    <Image src="/ergebnisse/grey-blending-1-vorher.jpg" alt="Grey Blending Vorher" fill className="object-cover" />
                   </div>
                   <p className="mt-2 text-center text-sm text-[#D4C6A6]">Vorher</p>
                 </div>
                 <div>
                   <div className="relative h-60 rounded-md overflow-hidden">
-                    <Image src="/ergebnisse/look01-nachher.webp" alt="Grau-Blond Nachher" fill className="object-cover" />
+                    <Image src="/ergebnisse/grey-blending-1-nachher.jpg" alt="Grey Blending Nachher" fill className="object-cover" />
                   </div>
                   <p className="mt-2 text-center text-sm text-[#D4C6A6]">Nachher</p>
                 </div>
@@ -202,7 +202,7 @@ export default function GreyBlendingPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="rounded-md border border-white/10 bg-black/15 p-4">
                 <div className="relative h-60 rounded-md overflow-hidden">
-                  <Image src="/ergebnisse/look08-nachher.webp" alt="Look B Nachher" fill className="object-cover" />
+                  <Image src="/ergebnisse/grey-blending-2-nachher.jpg" alt="Look B Nachher" fill className="object-cover" />
                 </div>
                 <p className="mt-3 text-sm text-white/90">
                   Look B: Natürliche Integration mit pflegeleichtem Ergebnis und längeren Farbintervallen.
@@ -210,7 +210,7 @@ export default function GreyBlendingPage() {
               </div>
               <div className="rounded-md border border-white/10 bg-black/15 p-4">
                 <div className="relative h-60 rounded-md overflow-hidden">
-                  <Image src="/ergebnisse/look09-nachher.webp" alt="Look C Nachher" fill className="object-cover" />
+                  <Image src="/ergebnisse/grey-blending-3-nachher.jpg" alt="Look C Nachher" fill className="object-cover" />
                 </div>
                 <p className="mt-3 text-sm text-white/90">
                   Look C: Nuancen-Anpassung für ein ruhigeres, dunkler abgestimmtes Grey Blending.
@@ -218,7 +218,7 @@ export default function GreyBlendingPage() {
               </div>
               <div className="rounded-md border border-white/10 bg-black/15 p-4">
                 <div className="relative h-60 rounded-md overflow-hidden">
-                  <Image src="/ergebnisse/look10-nachher.webp" alt="Look D Nachher" fill className="object-cover" />
+                  <Image src="/ergebnisse/grey-blending-4-nachher.jpg" alt="Look D Nachher" fill className="object-cover" />
                 </div>
                 <p className="mt-3 text-sm text-white/90">
                   Look D: Dunkles Grey Blending mit Bob und Pony als klare Komplett-Transformation.

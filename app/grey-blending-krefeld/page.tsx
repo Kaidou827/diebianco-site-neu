@@ -43,8 +43,8 @@ const testimonials = [
 ]
 
 const vorherNachher = [
-  { vorher: "/kunde-1-vorher.jpg", nachher: "/kunde-1-nachher.jpg" },
-  { vorher: "/kunde-2-vorher.jpg", nachher: "/kunde-2-nachher.jpg" },
+  { vorher: "/ergebnisse/grey-blending-1-vorher.jpg", nachher: "/ergebnisse/grey-blending-1-nachher.jpg" },
+  { vorher: "/ergebnisse/grey-blending-2-vorher.jpg", nachher: "/ergebnisse/grey-blending-2-nachher.jpg" },
 ]
 
 export default function GreyBlendingKrefeld() {
