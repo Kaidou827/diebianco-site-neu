@@ -105,6 +105,7 @@ export default function AnfrageFormular({
     phone: "",
     email: "",
     wunschzeitraum: "",
+    nachricht: "",
   })
   const [stapel, setStapel] = useState<AntwortZeile[]>([])
 
@@ -119,7 +120,9 @@ export default function AnfrageFormular({
             (f) =>
               f.welle === 2 &&
               (!f.nurBeiFarbe || istFarbe) &&
-              (FOTO_UPLOAD_AKTIV || f.fieldType !== "file"),
+              (FOTO_UPLOAD_AKTIV || f.fieldType !== "file") &&
+              // anmerkung_kundin wird jetzt schon im Kontakt-Schritt erfasst
+              f.hubspotName !== "anmerkung_kundin",
           )
         : [],
     [istFarbe, istDeep],
@@ -214,6 +217,7 @@ export default function AnfrageFormular({
     try {
       const extra: Record<string, string> = {}
       if (variante === "standard" && daten.wunschzeitraum) extra.wunschzeitraum = daten.wunschzeitraum
+      if (daten.nachricht.trim()) extra.anmerkung_kundin = daten.nachricht.trim()
 
       const res = await fetch("/api/anfrage", {
         method: "POST",
@@ -448,6 +452,17 @@ export default function AnfrageFormular({
                   autoComplete="email"
                   value={daten.email}
                   onChange={(e) => set("email", e.target.value)}
+                />
+              </label>
+
+              <label className="db-label">
+                Nachricht <span className="db-optional">(optional)</span>
+                <textarea
+                  className="db-textarea"
+                  rows={3}
+                  value={daten.nachricht}
+                  onChange={(e) => set("nachricht", e.target.value)}
+                  placeholder="Was sollen wir wissen? (z. B. Anlass, Wunsch, Fragen)"
                 />
               </label>
 
