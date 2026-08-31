@@ -166,8 +166,8 @@ export default function AnfrageFormular({
       (form.querySelector('input[name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || ""
 
     const ziffern = daten.phone.replace(/\D/g, "")
-    if (!daten.firstname.trim() || !daten.phone.trim()) {
-      setFehler("Vorname und Telefon sind erforderlich.")
+    if (!daten.firstname.trim() || !daten.phone.trim() || !daten.email.trim()) {
+      setFehler("Vorname, Telefon und E-Mail sind erforderlich.")
       return
     }
     if (ziffern.length < 9) {
@@ -402,10 +402,11 @@ export default function AnfrageFormular({
                 />
               </label>
               <label className="db-label">
-                E-Mail <span className="db-optional">(optional)</span>
+                E-Mail *
                 <input
                   className="db-input"
                   type="email"
+                  required
                   autoComplete="email"
                   value={daten.email}
                   onChange={(e) => set("email", e.target.value)}

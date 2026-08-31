@@ -158,9 +158,9 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
   const email = String(body.email || "").trim()
   const wunschBehandlung = String(body.wunsch_behandlung || "").trim()
 
-  if (!firstname || !phone) {
+  if (!firstname || !phone || !email) {
     return NextResponse.json(
-      { ok: false, message: "Vorname und Telefon sind erforderlich." },
+      { ok: false, message: "Vorname, Telefon und E-Mail sind erforderlich." },
       { status: 400 },
     )
   }
