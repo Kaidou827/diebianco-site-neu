@@ -167,25 +167,6 @@ export default function SchnitttechnikenPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-[#b4b1aa]">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto bg-black/20 backdrop-blur-sm rounded-xl p-8 md:p-12 border border-white/20">
-            <div className="text-center">
-              <h2 className="font-serif text-3xl md:text-4xl text-white mb-6">Bereit für deinen neuen Look?</h2>
-              <p className="text-white/80 text-lg mb-8">
-                Vereinbare jetzt einen Termin und entdecke, welcher Schnitt perfekt zu dir passt.
-              </p>
-              <Link
-                href="#kontakt-formular"
-                className="inline-flex justify-center items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-[#D4C6A6] to-[#B8A082] rounded-full hover:from-[#B8A082] hover:to-[#D4C6A6] hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4C6A6]/50 focus:ring-offset-2 shadow-lg"
-              >
-                Jetzt Termin vereinbaren
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <TerminSektion behandlung="Schnitt & Styling" titel="Schnitt-Termin anfragen" />
