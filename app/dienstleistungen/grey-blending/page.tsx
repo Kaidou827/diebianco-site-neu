@@ -182,7 +182,7 @@ export default function GreyBlendingPage() {
 
           <div className="max-w-6xl mx-auto space-y-6">
             <div className="rounded-md border border-white/10 bg-black/15 p-4">
-              <p className="text-[#D4C6A6] text-sm mb-3">Look A · Highlight</p>
+              <p className="text-[#D4C6A6] text-sm mb-3">Grey Blending · Vorher / Nachher</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div className="relative h-60 rounded-md overflow-hidden">
@@ -205,7 +205,7 @@ export default function GreyBlendingPage() {
                   <Image src="/ergebnisse/grey-blending-2-nachher.jpg" alt="Look B Nachher" fill className="object-cover" />
                 </div>
                 <p className="mt-3 text-sm text-white/90">
-                  Look B: Natürliche Integration mit pflegeleichtem Ergebnis und längeren Farbintervallen.
+                  Weiches, natürliches Grey Blending – pflegeleicht und mit langen Farbintervallen.
                 </p>
               </div>
               <div className="rounded-md border border-white/10 bg-black/15 p-4">
@@ -213,7 +213,7 @@ export default function GreyBlendingPage() {
                   <Image src="/ergebnisse/grey-blending-3-nachher.jpg" alt="Look C Nachher" fill className="object-cover" />
                 </div>
                 <p className="mt-3 text-sm text-white/90">
-                  Look C: Nuancen-Anpassung für ein ruhigeres, dunkler abgestimmtes Grey Blending.
+                  Harmonischer Grau-Blond-Übergang mit lebendigem Glanz und Struktur.
                 </p>
               </div>
               <div className="rounded-md border border-white/10 bg-black/15 p-4">
@@ -221,7 +221,7 @@ export default function GreyBlendingPage() {
                   <Image src="/ergebnisse/grey-blending-4-nachher.jpg" alt="Look D Nachher" fill className="object-cover" />
                 </div>
                 <p className="mt-3 text-sm text-white/90">
-                  Look D: Dunkles Grey Blending mit Bob und Pony als klare Komplett-Transformation.
+                  Dimensioniertes Grey Blending mit viel Bewegung und modernem Finish.
                 </p>
               </div>
             </div>

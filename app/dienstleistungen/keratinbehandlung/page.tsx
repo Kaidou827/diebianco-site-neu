@@ -170,6 +170,37 @@ export default function KeratinbehandlungPage() {
         </div>
       </section>
 
+      {/* Ergebnisse Vorher/Nachher */}
+      <section className="py-16 bg-[#b4b1aa]">
+        <div className="container mx-auto px-4 md:px-6">
+          <h2 className="font-serif text-3xl md:text-4xl text-[#D4C6A6] mb-8 text-center">Ergebnisse</h2>
+          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="rounded-md border border-white/10 bg-black/15 p-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="relative h-56 rounded-md overflow-hidden">
+                    <Image src="/ergebnisse/keratin-1-vorher.jpg" alt="Keratin Vorher" fill className="object-cover" />
+                  </div>
+                  <p className="mt-2 text-center text-sm text-[#D4C6A6]">Vorher</p>
+                </div>
+                <div>
+                  <div className="relative h-56 rounded-md overflow-hidden">
+                    <Image src="/ergebnisse/keratin-1-nachher.jpg" alt="Keratin Nachher" fill className="object-cover" />
+                  </div>
+                  <p className="mt-2 text-center text-sm text-[#D4C6A6]">Nachher</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-md border border-white/10 bg-black/15 p-4">
+              <div className="relative h-56 rounded-md overflow-hidden">
+                <Image src="/ergebnisse/keratin-2-nachher.jpg" alt="Keratin Ergebnis" fill className="object-cover" />
+              </div>
+              <p className="mt-2 text-center text-sm text-[#D4C6A6]">Keratin-Ergebnis</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-16 md:py-24 bg-[#b4b1aa]">
         <div className="container mx-auto px-4">

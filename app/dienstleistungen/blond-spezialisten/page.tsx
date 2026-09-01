@@ -187,13 +187,13 @@ export default function BlondSpezialistenPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <div className="relative h-52 rounded-md overflow-hidden">
-                    <Image src="/kunde-1-vorher.jpg" alt="Kunde 1 Vorher" fill className="object-cover" />
+                    <Image src="/ergebnisse/blond-2-vorher.jpg" alt="Blond Vorher" fill className="object-cover" />
                   </div>
                   <p className="mt-2 text-center text-sm text-[#D4C6A6]">Vorher</p>
                 </div>
                 <div>
                   <div className="relative h-52 rounded-md overflow-hidden">
-                    <Image src="/kunde-1-nachher.jpg" alt="Kunde 1 Nachher" fill className="object-cover" />
+                    <Image src="/ergebnisse/blond-2-nachher.jpg" alt="Blond Nachher" fill className="object-cover" />
                   </div>
                   <p className="mt-2 text-center text-sm text-[#D4C6A6]">Nachher</p>
                 </div>
@@ -201,20 +201,10 @@ export default function BlondSpezialistenPage() {
             </div>
 
             <div className="rounded-md border border-white/10 bg-black/15 p-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="relative h-52 rounded-md overflow-hidden">
-                    <Image src="/kunde-2-vorher.jpg" alt="Kunde 2 Vorher" fill className="object-cover" />
-                  </div>
-                  <p className="mt-2 text-center text-sm text-[#D4C6A6]">Vorher</p>
-                </div>
-                <div>
-                  <div className="relative h-52 rounded-md overflow-hidden">
-                    <Image src="/kunde-2-nachher.jpg" alt="Kunde 2 Nachher" fill className="object-cover" />
-                  </div>
-                  <p className="mt-2 text-center text-sm text-[#D4C6A6]">Nachher</p>
-                </div>
+              <div className="relative h-52 rounded-md overflow-hidden">
+                <Image src="/ergebnisse/blond-1-nachher.jpg" alt="Blond Ergebnis" fill className="object-cover" />
               </div>
+              <p className="mt-2 text-center text-sm text-[#D4C6A6]">Blond-Ergebnis</p>
             </div>
           </div>
         </div>
