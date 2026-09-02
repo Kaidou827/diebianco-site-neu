@@ -33,6 +33,10 @@ const MAIL_EMPFAENGER = process.env.MAIL_TO
   ? process.env.MAIL_TO.split(/[;,]/).map((s) => s.trim()).filter(Boolean)
   : ["salon@diebianco.de", "scharam.saleh@gmail.com"]
 const MAIL_ABSENDER = process.env.MAIL_FROM || process.env.SMTP_USER || "salon@diebianco.de"
+const MAIL_ABSENDER_NAME = process.env.MAIL_FROM_NAME || "DIE BIANCO"
+const MAIL_FROM_FULL = `${MAIL_ABSENDER_NAME} <${MAIL_ABSENDER}>`
+// Antworten der Kundin sollen im Salon-Postfach landen – unabhängig vom Versand-Konto.
+const MAIL_REPLYTO = process.env.MAIL_REPLYTO || "salon@diebianco.de"
 
 /** Slug -> Anzeige-Label (für lesbare Mails). */
 function labelMap(hubspotName: string): Record<string, string> {
@@ -87,7 +91,7 @@ async function sendeLeadKarte(d: {
     .join("\n")
 
   await transporter.sendMail({
-    from: MAIL_ABSENDER,
+    from: MAIL_FROM_FULL,
     to: MAIL_EMPFAENGER,
     replyTo: d.email || undefined,
     subject: `Neue Anfrage: ${d.firstname} – ${d.wunsch || "Termin"}`,
@@ -112,8 +116,9 @@ async function sendeKundenBestaetigung(email: string, firstname: string): Promis
   ].join("\n")
 
   await transporter.sendMail({
-    from: MAIL_ABSENDER,
+    from: MAIL_FROM_FULL,
     to: email,
+    replyTo: MAIL_REPLYTO,
     subject: "Deine Anfrage bei DIE BIANCO – wir melden uns",
     text,
   })
