@@ -224,6 +224,7 @@ export default function AnfrageFormular({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           welle: 1,
+          variante,
           firstname: daten.firstname,
           lastname: daten.lastname,
           phone: daten.phone,

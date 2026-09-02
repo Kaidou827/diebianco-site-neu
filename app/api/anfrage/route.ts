@@ -26,48 +26,62 @@ const ERLAUBTE_FELDER = new Set(
   FELDER.filter((f) => f.welle !== "workflow").map((f) => f.hubspotName),
 )
 
-// ── E-Mail-Benachrichtigung an den Salon ─────────────────────────────────────
-// Empfänger: über MAIL_TO überschreibbar; Default = Salon + Scharam (kein techotastic mehr).
-// Absender:  MAIL_FROM, sonst der authentifizierte SMTP-Account (beste Zustellbarkeit),
-//            sonst salon@diebianco.de.
+// ── E-Mail (Lead-Karte ans Team + Bestätigung an die Kundin) ────────────────
+// Empfänger Team: über MAIL_TO überschreibbar; Default = Salon + Scharam.
+// Absender:  MAIL_FROM, sonst der authentifizierte SMTP-Account, sonst salon@diebianco.de.
 const MAIL_EMPFAENGER = process.env.MAIL_TO
   ? process.env.MAIL_TO.split(/[;,]/).map((s) => s.trim()).filter(Boolean)
   : ["salon@diebianco.de", "scharam.saleh@gmail.com"]
 const MAIL_ABSENDER = process.env.MAIL_FROM || process.env.SMTP_USER || "salon@diebianco.de"
 
-/** Slug -> Anzeige-Label der Wunsch-Behandlung (für lesbare Mails). */
-const BEHANDLUNG_LABELS: Record<string, string> = Object.fromEntries(
-  (FELDER.find((f) => f.hubspotName === "wunsch_behandlung")?.optionen ?? []).map((l) => [optionWert(l), l]),
-)
+/** Slug -> Anzeige-Label (für lesbare Mails). */
+function labelMap(hubspotName: string): Record<string, string> {
+  return Object.fromEntries(
+    (FELDER.find((f) => f.hubspotName === hubspotName)?.optionen ?? []).map((l) => [optionWert(l), l]),
+  )
+}
+const BEHANDLUNG_LABELS = labelMap("wunsch_behandlung")
+const ZEITRAUM_LABELS = labelMap("wunschzeitraum")
 
-async function sendeBenachrichtigung(d: {
+function baueTransporter() {
+  const host = process.env.SMTP_HOST
+  const port = Number(process.env.SMTP_PORT)
+  const user = process.env.SMTP_USER
+  const pass = process.env.SMTP_PASS
+  if (!host || !port || Number.isNaN(port) || !user || !pass) {
+    console.warn("SMTP unvollständig — E-Mail übersprungen.")
+    return null
+  }
+  const secure = process.env.SMTP_SECURE === "true" || port === 465
+  return nodemailer.createTransport({ host, port, secure, auth: { user, pass } })
+}
+
+/** Aufbereitete Lead-Karte ans Team (scannbar, Anruf-fertig). */
+async function sendeLeadKarte(d: {
   firstname: string
   lastname: string
   phone: string
   email: string
   wunsch: string
+  wunschzeitraum: string
   anmerkung: string
+  deep: boolean
 }): Promise<void> {
-  const host = process.env.SMTP_HOST
-  const port = Number(process.env.SMTP_PORT)
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
-  const secure = process.env.SMTP_SECURE === "true" || port === 465
-  if (!host || !port || Number.isNaN(port) || !user || !pass) {
-    console.warn("SMTP unvollständig — Benachrichtigung übersprungen.")
-    return
-  }
-  const transporter = nodemailer.createTransport({ host, port, secure, auth: { user, pass } })
+  const transporter = baueTransporter()
+  if (!transporter) return
+  const name = `${d.firstname} ${d.lastname}`.trim()
   const text = [
-    "Neue Terminanfrage über die Website",
+    "🔔 Neue Anfrage – DIE BIANCO",
     "",
-    `Name: ${`${d.firstname} ${d.lastname}`.trim()}`,
-    `Telefon: ${d.phone}`,
-    `E-Mail: ${d.email}`,
-    `Wunsch-Behandlung: ${d.wunsch || "-"}`,
-    d.anmerkung ? `Nachricht: ${d.anmerkung}` : "",
+    `${name} · ${d.phone}`,
+    `Behandlung: ${d.wunsch || "-"}`,
+    d.email ? `E-Mail: ${d.email}` : "",
+    d.wunschzeitraum ? `Wunschzeitraum: ${d.wunschzeitraum}` : "",
+    d.anmerkung ? `Nachricht: „${d.anmerkung}"` : "",
     "",
-    "Der vollständige Kontakt liegt in HubSpot.",
+    d.deep
+      ? "Weitere Detailangaben & Priorität folgen im Kontakt in HubSpot."
+      : "Status, Priorität & alle Angaben im Kontakt in HubSpot.",
   ]
     .filter(Boolean)
     .join("\n")
@@ -77,6 +91,30 @@ async function sendeBenachrichtigung(d: {
     to: MAIL_EMPFAENGER,
     replyTo: d.email || undefined,
     subject: `Neue Anfrage: ${d.firstname} – ${d.wunsch || "Termin"}`,
+    text,
+  })
+}
+
+/** Automatische Eingangsbestätigung an die Kundin. */
+async function sendeKundenBestaetigung(email: string, firstname: string): Promise<void> {
+  if (!email) return
+  const transporter = baueTransporter()
+  if (!transporter) return
+  const text = [
+    `Hallo ${firstname},`,
+    "",
+    "vielen Dank für deine Anfrage bei DIE BIANCO!",
+    "Teresa meldet sich persönlich bei dir – in der Regel innerhalb von 24 Stunden.",
+    "",
+    "Bis bald & liebe Grüße",
+    "Dein Team von DIE BIANCO",
+    "Siedlung Egelsberg 1 · 47802 Krefeld · +49 174 3091973",
+  ].join("\n")
+
+  await transporter.sendMail({
+    from: MAIL_ABSENDER,
+    to: email,
+    subject: "Deine Anfrage bei DIE BIANCO – wir melden uns",
     text,
   })
 }
@@ -202,24 +240,37 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
     }
   }
 
+  // Automatische Aufbereitung (server-seitig, nicht aus dem Formular).
+  // Baseline; echte Priorität/Qualität wird in Welle 2 aus der Dringlichkeit verfeinert.
+  properties.lead_status_intern = "neu"
+  properties.prioritaet = "mittel"
+  properties.lead_qualitaet = "warm"
+
   try {
     const vorhandeneId = email ? await findeKontaktId(email) : null
     const contactId = vorhandeneId
       ? (await aktualisiereKontakt(vorhandeneId, properties), vorhandeneId)
       : await legeKontaktAn(properties)
 
-    // Sofort-Benachrichtigung an den Salon (best effort — Fehler blockiert die Antwort nicht).
+    // Best effort — Mail-Fehler blockieren die Antwort nicht.
     try {
-      await sendeBenachrichtigung({
+      await sendeLeadKarte({
         firstname,
         lastname,
         phone,
         email,
         wunsch: BEHANDLUNG_LABELS[wunschBehandlung] || wunschBehandlung,
+        wunschzeitraum: ZEITRAUM_LABELS[String(extra.wunschzeitraum || "")] || "",
         anmerkung: typeof extra.anmerkung_kundin === "string" ? extra.anmerkung_kundin : "",
+        deep: String(body.variante || "") === "deep",
       })
     } catch (mailErr) {
-      console.error("Benachrichtigungs-Mail fehlgeschlagen:", mailErr)
+      console.error("Lead-Karte-Mail fehlgeschlagen:", mailErr)
+    }
+    try {
+      await sendeKundenBestaetigung(email, firstname)
+    } catch (mailErr) {
+      console.error("Kundenbestätigung fehlgeschlagen:", mailErr)
     }
 
     return NextResponse.json({ ok: true, contactId })
@@ -243,6 +294,20 @@ async function handleWelle2(body: Record<string, unknown>): Promise<NextResponse
   for (const [name, value] of Object.entries(updates)) {
     if (ERLAUBTE_FELDER.has(name) && value != null && String(value).length > 0) {
       properties[name] = String(value)
+    }
+  }
+
+  // Priorität & Lead-Qualität aus der Dringlichkeit ableiten (server-seitig).
+  if (properties.dringlichkeit) {
+    const ableitung: Record<string, { prioritaet: string; lead_qualitaet: string }> = {
+      so_schnell_wie_moeglich: { prioritaet: "hoch", lead_qualitaet: "heiss" },
+      in_2_4_wochen: { prioritaet: "mittel", lead_qualitaet: "warm" },
+      ich_bin_flexibel: { prioritaet: "niedrig", lead_qualitaet: "kalt" },
+    }
+    const a = ableitung[properties.dringlichkeit]
+    if (a) {
+      properties.prioritaet = a.prioritaet
+      properties.lead_qualitaet = a.lead_qualitaet
     }
   }
 

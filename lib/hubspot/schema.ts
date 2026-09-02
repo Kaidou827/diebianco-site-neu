@@ -188,7 +188,7 @@ export const FELDER: FeldDefinition[] = [
     spalten: 1,
   },
 
-  // ── Nur durch Workflow 1 gesetzt (kein Formularfeld) ───────────────────
+  // ── Automatisch vom Backend gesetzt (kein Formularfeld) ────────────────
   {
     id: "prioritaet",
     hubspotName: "prioritaet",
@@ -197,6 +197,16 @@ export const FELDER: FeldDefinition[] = [
     fieldType: "select",
     type: "enumeration",
     optionen: ["Hoch", "Mittel", "Niedrig"],
+    welle: "workflow",
+  },
+  {
+    id: "leadQualitaet",
+    hubspotName: "lead_qualitaet",
+    label: "Lead-Qualität",
+    frage: "",
+    fieldType: "select",
+    type: "enumeration",
+    optionen: ["Heiß", "Warm", "Kalt"],
     welle: "workflow",
   },
   {
