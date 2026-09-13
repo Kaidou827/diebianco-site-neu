@@ -138,7 +138,9 @@ Siehe `.env.example`. Kurzüberblick:
 - **HubSpot:** `HUBSPOT_PRIVATE_APP_TOKEN` (Pflicht), optional `HUBSPOT_API_BASE`,
   `HUBSPOT_DEFAULT_OWNER_ID` (Default 81184186).
 - **SMTP:** `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`.
-- **Mail:** `MAIL_FROM`, `MAIL_FROM_NAME`, `MAIL_TO`, `MAIL_REPLYTO`.
+- **Mail:** `MAIL_FROM`, `MAIL_FROM_NAME`, `MAIL_TO`, `MAIL_REPLYTO`,
+  `MAIL_PREISE_ANZEIGEN` (Default `true`; `false` blendet die ab-Preise in der
+  Eingangsbestätigung aus).
 - **Links:** `SITE_URL` (Default https://www.diebianco.de).
 - **Spam (optional):** `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`
   (Turnstile rendert/prüft nur, wenn gesetzt – sonst bleibt das Formular nutzbar).

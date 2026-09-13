@@ -20,6 +20,9 @@ const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURICom
   `${salonAdresse.strasse} ${salonAdresse.ort}`,
 )}`
 
+// ab-Preis-Block in der Eingangsbestätigung abschaltbar (Default: an).
+const PREISE_ANZEIGEN = process.env.MAIL_PREISE_ANZEIGEN !== "false"
+
 /** HTML-escape für alle in Templates eingesetzten (Nutzer-)Werte. */
 function esc(s: string): string {
   return String(s ?? "")
@@ -154,9 +157,9 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
     `vielen Dank – ${dankeSatz}`,
     meldeSatz,
     ...(zeitraumSatz ? ["", zeitraumSatz] : []),
-    "",
-    "Zur Orientierung (ab-Preise):",
-    ...PREIS_ZEILEN.map((z) => `– ${z}`),
+    ...(PREISE_ANZEIGEN
+      ? ["", "Zur Orientierung (ab-Preise):", ...PREIS_ZEILEN.map((z) => `– ${z}`)]
+      : []),
     "",
     "So findest du uns:",
     `${adresse}`,
@@ -166,6 +169,8 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
     "",
     `Unsere Ergebnisse: ${SITE}/ergebnisse`,
     `Behandlungen & Preise: ${SITE}/behandlungen-preise`,
+    "",
+    "Du musst jetzt nichts weiter tun – Teresa meldet sich persönlich bei dir.",
     "",
     "Bis bald & liebe Grüße",
     "Dein Team von DIE BIANCO",
@@ -181,10 +186,10 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
   <p style="margin:0 0 12px">${esc(meldeSatz)}</p>
   ${zeitraumSatz ? `<p style="margin:0 0 12px;background:#F5F1E8;border-radius:10px;padding:12px 16px">${esc(zeitraumSatz)}</p>` : ""}
 
-  <p style="margin:20px 0 6px;font-weight:700">Zur Orientierung (ab-Preise)</p>
+  ${PREISE_ANZEIGEN ? `<p style="margin:20px 0 6px;font-weight:700">Zur Orientierung (ab-Preise)</p>
   <ul style="margin:0 0 16px;padding-left:20px">
     ${PREIS_ZEILEN.map((z) => `<li>${esc(z)}</li>`).join("")}
-  </ul>
+  </ul>` : ""}
 
   <p style="margin:20px 0 6px;font-weight:700">So findest du uns</p>
   <p style="margin:0 0 4px">
@@ -197,6 +202,8 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
     <a href="${esc(SITE)}/ergebnisse" style="color:#B8863D;margin-right:16px">Unsere Ergebnisse ansehen</a>
     <a href="${esc(SITE)}/behandlungen-preise" style="color:#B8863D">Behandlungen &amp; Preise</a>
   </p>
+
+  <p style="margin:0 0 16px">Du musst jetzt nichts weiter tun – Teresa meldet sich persönlich bei dir.</p>
 
   <p style="margin:0 0 4px">Bis bald &amp; liebe Grüße</p>
   <p style="margin:0 0 20px;font-weight:600">Dein Team von DIE BIANCO</p>
