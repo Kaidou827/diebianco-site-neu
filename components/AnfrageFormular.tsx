@@ -49,6 +49,7 @@ interface AntwortZeile {
 
 const BEHANDLUNG_FELD = FORMULAR_FELDER.find((f) => f.hubspotName === "wunsch_behandlung")!
 const ZEITRAUM_FELD = FORMULAR_FELDER.find((f) => f.hubspotName === "wunschzeitraum")
+const WHATSAPP_FELD = FORMULAR_FELDER.find((f) => f.hubspotName === "whatsapp_ok")
 const FARB_WERTE = new Set(FARB_BEHANDLUNGEN.map(optionWert))
 const WHATSAPP_JA = optionWert("Ja, gerne")
 const UNSICHER = optionWert("Weiß ich noch nicht")
@@ -97,6 +98,7 @@ export default function AnfrageFormular({
   const [fehler, setFehler] = useState("")
   const [stapelOffen, setStapelOffen] = useState(false)
   const [sichtbar, setSichtbar] = useState(false)
+  const [einwilligung, setEinwilligung] = useState(false)
 
   const [daten, setDaten] = useState<Record<string, string>>({
     wunsch_behandlung: vorauswahlWert,
@@ -121,8 +123,9 @@ export default function AnfrageFormular({
               f.welle === 2 &&
               (!f.nurBeiFarbe || istFarbe) &&
               (FOTO_UPLOAD_AKTIV || f.fieldType !== "file") &&
-              // anmerkung_kundin wird jetzt schon im Kontakt-Schritt erfasst
-              f.hubspotName !== "anmerkung_kundin",
+              // anmerkung_kundin + whatsapp_ok werden jetzt im Kontakt-Schritt erfasst
+              f.hubspotName !== "anmerkung_kundin" &&
+              f.hubspotName !== "whatsapp_ok",
           )
         : [],
     [istFarbe, istDeep],
@@ -215,9 +218,7 @@ export default function AnfrageFormular({
     setIsSubmitting(true)
     setFehler("")
     try {
-      const extra: Record<string, string> = {}
-      if (variante === "standard" && daten.wunschzeitraum) extra.wunschzeitraum = daten.wunschzeitraum
-      if (daten.nachricht.trim()) extra.anmerkung_kundin = daten.nachricht.trim()
+      const quelleSeite = typeof window !== "undefined" ? window.location.pathname : ""
 
       const res = await fetch("/api/anfrage", {
         method: "POST",
@@ -230,20 +231,26 @@ export default function AnfrageFormular({
           phone: daten.phone,
           email: daten.email,
           wunsch_behandlung: daten.wunsch_behandlung,
-          extra: Object.keys(extra).length ? extra : undefined,
+          wunschzeitraum: daten.wunschzeitraum || undefined,
+          whatsapp_ok: daten.whatsapp_ok || undefined,
+          nachricht: daten.nachricht.trim() || undefined,
+          einwilligung_marketing: einwilligung,
+          quelle_seite: quelleSeite || undefined,
           honeypot,
           turnstileToken: isTurnstileEnabled ? turnstileToken : undefined,
           spamProtectionRequired: isTurnstileEnabled,
         }),
       })
       const json = (await res.json()) as { ok: boolean; contactId?: string; message?: string }
-      if (!json.ok || !json.contactId) {
+      if (!json.ok) {
         setFehler(json.message || "Konnte nicht gespeichert werden.")
         return
       }
-      setContactId(json.contactId)
+      setContactId(json.contactId || "")
       setZeitBeleg(new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }))
-      if (phaseBFelder.length > 0) {
+      // Phase B nur, wenn ein Kontakt existiert (sonst könnten die PATCHes nicht
+      // zugeordnet werden) – bei HubSpot-Ausfall direkt sauber abschliessen.
+      if (json.contactId && phaseBFelder.length > 0) {
         setPhase("b")
         setBIndex(0)
         sanftInSicht()
@@ -489,6 +496,40 @@ export default function AnfrageFormular({
                 </div>
               )}
 
+              {WHATSAPP_FELD?.optionen && (
+                <div className="db-label">
+                  <span>{WHATSAPP_FELD.frage} <span className="db-optional">(optional)</span></span>
+                  <div className="db-chips">
+                    {WHATSAPP_FELD.optionen.map((label) => {
+                      const wert = optionWert(label)
+                      const aktiv = daten.whatsapp_ok === wert
+                      return (
+                        <button
+                          key={label}
+                          type="button"
+                          className={`db-chip${aktiv ? " db-chip-aktiv" : ""}`}
+                          onClick={() => set("whatsapp_ok", aktiv ? "" : wert)}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <label className="db-check">
+                <input
+                  type="checkbox"
+                  checked={einwilligung}
+                  onChange={(e) => setEinwilligung(e.target.checked)}
+                />
+                <span>
+                  Ja, DIE BIANCO darf mir gelegentlich Tipps und Termin-Erinnerungen per E-Mail schicken.
+                  Abmeldung jederzeit möglich.
+                </span>
+              </label>
+
               {isTurnstileEnabled && (
                 <div className="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme={theme === "dunkel" ? "dark" : "light"} data-size="flexible" />
               )}
@@ -692,6 +733,8 @@ const stil = `
 .db-chip { min-height: 44px; padding: 8px 16px; border-radius: 999px; border: 1.5px solid var(--db-sand); background: var(--db-weiss); color: var(--db-charcoal); font-size: 14px; font-weight: 500; cursor: pointer; transition: all .15s; }
 .db-chip:hover { border-color: var(--db-akzent); }
 .db-chip-aktiv { background: var(--db-akzent); border-color: var(--db-akzent); color: var(--db-cta-text); }
+.db-check { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; font-weight: 400; color: var(--db-taupe); cursor: pointer; line-height: 1.45; min-height: 44px; padding: 4px 0; }
+.db-check input { width: 20px; height: 20px; margin-top: 1px; flex-shrink: 0; accent-color: var(--db-akzent); cursor: pointer; }
 .db-cta { background: var(--db-cta-bg); color: var(--db-cta-text); border: none; border-radius: 999px; min-height: 52px; padding: 14px 20px; font-size: 16px; font-weight: 700; cursor: pointer; transition: filter .15s, transform .1s; box-shadow: 0 8px 20px -8px rgba(0,0,0,.35); }
 .db-cta:hover { filter: brightness(1.03); transform: translateY(-1px); }
 .db-cta:disabled { opacity: .6; cursor: default; transform: none; }
