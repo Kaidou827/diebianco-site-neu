@@ -7,7 +7,9 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "sync:hubspot": "tsx scripts/sync-properties.ts"
+    "sync:hubspot": "tsx scripts/sync-properties.ts",
+    "test": "tsx --test tests/lead-logic.test.ts tests/faelligkeit.test.ts",
+    "test:anfrage": "tsx scripts/test-anfrage.ts"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",

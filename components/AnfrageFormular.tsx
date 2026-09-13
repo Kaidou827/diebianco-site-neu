@@ -49,9 +49,30 @@ interface AntwortZeile {
 
 const BEHANDLUNG_FELD = FORMULAR_FELDER.find((f) => f.hubspotName === "wunsch_behandlung")!
 const ZEITRAUM_FELD = FORMULAR_FELDER.find((f) => f.hubspotName === "wunschzeitraum")
+const WHATSAPP_FELD = FORMULAR_FELDER.find((f) => f.hubspotName === "whatsapp_ok")
 const FARB_WERTE = new Set(FARB_BEHANDLUNGEN.map(optionWert))
 const WHATSAPP_JA = optionWert("Ja, gerne")
 const UNSICHER = optionWert("Weiß ich noch nicht")
+
+// Kampagnen-Attribution: First-Touch, in sessionStorage gepuffert.
+const ATTRIB_KEYS = ["gclid", "gbraid", "wbraid", "utm_source", "utm_medium", "utm_campaign", "utm_term"] as const
+const ATTRIB_STORAGE = "db_attribution"
+
+/** Attribution auslesen: sessionStorage bevorzugt (First-Touch), Fallback URL. */
+function leseAttribution(): Record<string, string> {
+  if (typeof window === "undefined") return {}
+  let gespeichert: Record<string, string> = {}
+  try {
+    gespeichert = JSON.parse(sessionStorage.getItem(ATTRIB_STORAGE) || "{}") as Record<string, string>
+  } catch {}
+  const params = new URLSearchParams(window.location.search)
+  const out: Record<string, string> = {}
+  for (const k of ATTRIB_KEYS) {
+    const v = gespeichert[k] || params.get(k) || ""
+    if (v) out[k] = v
+  }
+  return out
+}
 
 const KURZ: Record<string, string> = {
   wunsch_behandlung: "Behandlung",
@@ -97,6 +118,7 @@ export default function AnfrageFormular({
   const [fehler, setFehler] = useState("")
   const [stapelOffen, setStapelOffen] = useState(false)
   const [sichtbar, setSichtbar] = useState(false)
+  const [einwilligung, setEinwilligung] = useState(false)
 
   const [daten, setDaten] = useState<Record<string, string>>({
     wunsch_behandlung: vorauswahlWert,
@@ -121,8 +143,9 @@ export default function AnfrageFormular({
               f.welle === 2 &&
               (!f.nurBeiFarbe || istFarbe) &&
               (FOTO_UPLOAD_AKTIV || f.fieldType !== "file") &&
-              // anmerkung_kundin wird jetzt schon im Kontakt-Schritt erfasst
-              f.hubspotName !== "anmerkung_kundin",
+              // anmerkung_kundin + whatsapp_ok werden jetzt im Kontakt-Schritt erfasst
+              f.hubspotName !== "anmerkung_kundin" &&
+              f.hubspotName !== "whatsapp_ok",
           )
         : [],
     [istFarbe, istDeep],
@@ -162,6 +185,25 @@ export default function AnfrageFormular({
     return () => io.disconnect()
   }, [])
 
+  // Kampagnen-Parameter beim ersten Kontakt (First-Touch) sichern – vorhandene
+  // Werte werden nicht überschrieben.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const gespeichert = JSON.parse(sessionStorage.getItem(ATTRIB_STORAGE) || "{}") as Record<string, string>
+      let geaendert = false
+      for (const k of ATTRIB_KEYS) {
+        const v = params.get(k)
+        if (v && !gespeichert[k]) {
+          gespeichert[k] = v
+          geaendert = true
+        }
+      }
+      if (geaendert) sessionStorage.setItem(ATTRIB_STORAGE, JSON.stringify(gespeichert))
+    } catch {}
+  }, [])
+
   const set = (name: string, value: string) => setDaten((d) => ({ ...d, [name]: value }))
 
   const sanftInSicht = () => {
@@ -199,8 +241,8 @@ export default function AnfrageFormular({
       (form.querySelector('input[name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || ""
 
     const ziffern = daten.phone.replace(/\D/g, "")
-    if (!daten.firstname.trim() || !daten.phone.trim() || !daten.email.trim()) {
-      setFehler("Vorname, Telefon und E-Mail sind erforderlich.")
+    if (!daten.firstname.trim() || !daten.lastname.trim() || !daten.phone.trim() || !daten.email.trim()) {
+      setFehler("Vor- und Nachname, Telefon und E-Mail sind erforderlich.")
       return
     }
     if (ziffern.length < 9) {
@@ -215,9 +257,8 @@ export default function AnfrageFormular({
     setIsSubmitting(true)
     setFehler("")
     try {
-      const extra: Record<string, string> = {}
-      if (variante === "standard" && daten.wunschzeitraum) extra.wunschzeitraum = daten.wunschzeitraum
-      if (daten.nachricht.trim()) extra.anmerkung_kundin = daten.nachricht.trim()
+      const quelleSeite = typeof window !== "undefined" ? window.location.pathname : ""
+      const tracking = leseAttribution()
 
       const res = await fetch("/api/anfrage", {
         method: "POST",
@@ -230,20 +271,27 @@ export default function AnfrageFormular({
           phone: daten.phone,
           email: daten.email,
           wunsch_behandlung: daten.wunsch_behandlung,
-          extra: Object.keys(extra).length ? extra : undefined,
+          wunschzeitraum: daten.wunschzeitraum || undefined,
+          whatsapp_ok: daten.whatsapp_ok || undefined,
+          nachricht: daten.nachricht.trim() || undefined,
+          einwilligung_marketing: einwilligung,
+          quelle_seite: quelleSeite || undefined,
+          tracking: Object.keys(tracking).length ? tracking : undefined,
           honeypot,
           turnstileToken: isTurnstileEnabled ? turnstileToken : undefined,
           spamProtectionRequired: isTurnstileEnabled,
         }),
       })
       const json = (await res.json()) as { ok: boolean; contactId?: string; message?: string }
-      if (!json.ok || !json.contactId) {
+      if (!json.ok) {
         setFehler(json.message || "Konnte nicht gespeichert werden.")
         return
       }
-      setContactId(json.contactId)
+      setContactId(json.contactId || "")
       setZeitBeleg(new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }))
-      if (phaseBFelder.length > 0) {
+      // Phase B nur, wenn ein Kontakt existiert (sonst könnten die PATCHes nicht
+      // zugeordnet werden) – bei HubSpot-Ausfall direkt sauber abschliessen.
+      if (json.contactId && phaseBFelder.length > 0) {
         setPhase("b")
         setBIndex(0)
         sanftInSicht()
@@ -409,29 +457,30 @@ export default function AnfrageFormular({
               )}
 
               <p className="db-legende">Wohin dürfen wir uns melden?</p>
-              <label className="db-label">
-                Vorname *
-                <input
-                  className="db-input"
-                  type="text"
-                  required
-                  autoComplete="given-name"
-                  value={daten.firstname}
-                  onChange={(e) => set("firstname", e.target.value)}
-                />
-              </label>
-              {variante === "deep" && (
+              <div className="db-namen">
                 <label className="db-label">
-                  Nachname
+                  Vorname *
                   <input
                     className="db-input"
                     type="text"
+                    required
+                    autoComplete="given-name"
+                    value={daten.firstname}
+                    onChange={(e) => set("firstname", e.target.value)}
+                  />
+                </label>
+                <label className="db-label">
+                  Nachname *
+                  <input
+                    className="db-input"
+                    type="text"
+                    required
                     autoComplete="family-name"
                     value={daten.lastname}
                     onChange={(e) => set("lastname", e.target.value)}
                   />
                 </label>
-              )}
+              </div>
               <label className="db-label">
                 Handynummer *
                 <input
@@ -488,6 +537,40 @@ export default function AnfrageFormular({
                   </div>
                 </div>
               )}
+
+              {WHATSAPP_FELD?.optionen && (
+                <div className="db-label">
+                  <span>{WHATSAPP_FELD.frage} <span className="db-optional">(optional)</span></span>
+                  <div className="db-chips">
+                    {WHATSAPP_FELD.optionen.map((label) => {
+                      const wert = optionWert(label)
+                      const aktiv = daten.whatsapp_ok === wert
+                      return (
+                        <button
+                          key={label}
+                          type="button"
+                          className={`db-chip${aktiv ? " db-chip-aktiv" : ""}`}
+                          onClick={() => set("whatsapp_ok", aktiv ? "" : wert)}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <label className="db-check">
+                <input
+                  type="checkbox"
+                  checked={einwilligung}
+                  onChange={(e) => setEinwilligung(e.target.checked)}
+                />
+                <span>
+                  Ja, DIE BIANCO darf mir gelegentlich Tipps und Termin-Erinnerungen per E-Mail schicken.
+                  Abmeldung jederzeit möglich.
+                </span>
+              </label>
 
               {isTurnstileEnabled && (
                 <div className="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme={theme === "dunkel" ? "dark" : "light"} data-size="flexible" />
@@ -682,6 +765,8 @@ const stil = `
 .db-gewaehlt { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--db-weiss); border: 1px solid var(--db-sand); border-radius: 10px; padding: 10px 14px; font-size: 14px; }
 .db-aendern { background: none; border: none; color: var(--db-akzent); text-decoration: underline; cursor: pointer; font-size: 14px; min-height: 44px; }
 .db-kontakt { display: flex; flex-direction: column; gap: 14px; }
+.db-namen { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 460px) { .db-namen { grid-template-columns: 1fr; } }
 .db-label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: var(--db-charcoal); }
 .db-optional { color: var(--db-taupe); font-weight: 400; }
 .db-input, .db-textarea { font-size: 16px; min-height: 48px; padding: 12px 14px; border: 1.5px solid var(--db-sand); border-radius: 10px; background: var(--db-weiss); color: var(--db-charcoal); width: 100%; }
@@ -692,6 +777,8 @@ const stil = `
 .db-chip { min-height: 44px; padding: 8px 16px; border-radius: 999px; border: 1.5px solid var(--db-sand); background: var(--db-weiss); color: var(--db-charcoal); font-size: 14px; font-weight: 500; cursor: pointer; transition: all .15s; }
 .db-chip:hover { border-color: var(--db-akzent); }
 .db-chip-aktiv { background: var(--db-akzent); border-color: var(--db-akzent); color: var(--db-cta-text); }
+.db-check { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; font-weight: 400; color: var(--db-taupe); cursor: pointer; line-height: 1.45; min-height: 44px; padding: 4px 0; }
+.db-check input { width: 20px; height: 20px; margin-top: 1px; flex-shrink: 0; accent-color: var(--db-akzent); cursor: pointer; }
 .db-cta { background: var(--db-cta-bg); color: var(--db-cta-text); border: none; border-radius: 999px; min-height: 52px; padding: 14px 20px; font-size: 16px; font-weight: 700; cursor: pointer; transition: filter .15s, transform .1s; box-shadow: 0 8px 20px -8px rgba(0,0,0,.35); }
 .db-cta:hover { filter: brightness(1.03); transform: translateY(-1px); }
 .db-cta:disabled { opacity: .6; cursor: default; transform: none; }
