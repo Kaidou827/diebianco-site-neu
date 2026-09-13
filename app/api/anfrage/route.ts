@@ -125,9 +125,9 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
   const einwilligungMarketing = Boolean(body.einwilligung_marketing)
   const tracking = (body.tracking || {}) as Record<string, unknown>
 
-  if (!firstname || !phoneRoh || !email) {
+  if (!firstname || !lastname || !phoneRoh || !email) {
     return NextResponse.json(
-      { ok: false, message: "Vorname, Telefon und E-Mail sind erforderlich." },
+      { ok: false, message: "Vor- und Nachname, Telefon und E-Mail sind erforderlich." },
       { status: 400 },
     )
   }

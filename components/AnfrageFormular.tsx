@@ -241,8 +241,8 @@ export default function AnfrageFormular({
       (form.querySelector('input[name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || ""
 
     const ziffern = daten.phone.replace(/\D/g, "")
-    if (!daten.firstname.trim() || !daten.phone.trim() || !daten.email.trim()) {
-      setFehler("Vorname, Telefon und E-Mail sind erforderlich.")
+    if (!daten.firstname.trim() || !daten.lastname.trim() || !daten.phone.trim() || !daten.email.trim()) {
+      setFehler("Vor- und Nachname, Telefon und E-Mail sind erforderlich.")
       return
     }
     if (ziffern.length < 9) {
@@ -457,29 +457,30 @@ export default function AnfrageFormular({
               )}
 
               <p className="db-legende">Wohin dürfen wir uns melden?</p>
-              <label className="db-label">
-                Vorname *
-                <input
-                  className="db-input"
-                  type="text"
-                  required
-                  autoComplete="given-name"
-                  value={daten.firstname}
-                  onChange={(e) => set("firstname", e.target.value)}
-                />
-              </label>
-              {variante === "deep" && (
+              <div className="db-namen">
                 <label className="db-label">
-                  Nachname
+                  Vorname *
                   <input
                     className="db-input"
                     type="text"
+                    required
+                    autoComplete="given-name"
+                    value={daten.firstname}
+                    onChange={(e) => set("firstname", e.target.value)}
+                  />
+                </label>
+                <label className="db-label">
+                  Nachname *
+                  <input
+                    className="db-input"
+                    type="text"
+                    required
                     autoComplete="family-name"
                     value={daten.lastname}
                     onChange={(e) => set("lastname", e.target.value)}
                   />
                 </label>
-              )}
+              </div>
               <label className="db-label">
                 Handynummer *
                 <input
@@ -764,6 +765,8 @@ const stil = `
 .db-gewaehlt { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--db-weiss); border: 1px solid var(--db-sand); border-radius: 10px; padding: 10px 14px; font-size: 14px; }
 .db-aendern { background: none; border: none; color: var(--db-akzent); text-decoration: underline; cursor: pointer; font-size: 14px; min-height: 44px; }
 .db-kontakt { display: flex; flex-direction: column; gap: 14px; }
+.db-namen { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 460px) { .db-namen { grid-template-columns: 1fr; } }
 .db-label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; color: var(--db-charcoal); }
 .db-optional { color: var(--db-taupe); font-weight: 400; }
 .db-input, .db-textarea { font-size: 16px; min-height: 48px; padding: 12px 14px; border: 1.5px solid var(--db-sand); border-radius: 10px; background: var(--db-weiss); color: var(--db-charcoal); width: 100%; }
