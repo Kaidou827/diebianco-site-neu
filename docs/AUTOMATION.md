@@ -53,7 +53,7 @@ Detailfragen als **Welle 2** – je Antwort ein PATCH auf die Kontakt-ID.
 | `lead_status_intern` | `neu` – **nur bei neuem/leerem Status** | `neu` |
 | `hubspot_owner_id` | fest (Teresa) | `81184186` |
 | `quelle_seite` | Pfad der Anfrage | `/kontakt` |
-| `gclid`, `utm_*` | aus Payload, falls vorhanden | (später vom Frontend) |
+| `gclid`, `utm_source`, `utm_medium`, `utm_campaign` | Frontend (First-Touch, sessionStorage) | `cj0…` / `google` |
 | `einwilligung_marketing` | Checkbox (nur `true` gesetzt) | `true` |
 | `einwilligung_zeitpunkt` | Zeitpunkt der Checkbox (Unix-ms) | `1757…` |
 | `eingangsbestaetigung_gesendet` | nach Mail-Versand (Unix-ms) | `1757…` |
@@ -61,6 +61,13 @@ Detailfragen als **Welle 2** – je Antwort ein PATCH auf die Kontakt-ID.
 > Datum/Zeit-Properties werden als **Unix-Millisekunden** gesendet.
 > `einwilligung_marketing` wird **nie automatisch auf false** gesetzt (kein
 > versehentlicher Widerruf bei Folgeanfragen).
+>
+> **Attribution (First-Touch):** Das Formular liest `gclid, gbraid, wbraid,
+> utm_source, utm_medium, utm_campaign, utm_term` beim Mount aus der URL und
+> puffert sie in `sessionStorage["db_attribution"]` (vorhandene Werte werden
+> nicht überschrieben). Beim Absenden werden sie mitgeschickt. Als Property
+> gespeichert werden nur `gclid` und `utm_source/-medium/-campaign`;
+> `gbraid`, `wbraid`, `utm_term` landen nur im Server-Log.
 
 ### Ableitungen (lib/lead-logic.ts)
 
@@ -75,8 +82,9 @@ Balayage 150 · Grey Blending 150 · Keratin 200 · Beratung 60 · Unklar 60.
 
 **Fälligkeit der Aufgabe** (immer Europe/Berlin, da das Portal auf US/Eastern steht):
 - Mo–Fr, Eingang **vor 15:00** → **heute 17:00**
-- sonst → **nächster Werktag 09:00** (ab morgen; Sonntag wird übersprungen,
-  Samstag zählt als Werktag → Fr 16:00 ⇒ Sa 09:00)
+- Sa, Eingang **vor 12:00** → **heute 13:00**
+- sonst (Sa ab 12:00, So, Mo–Fr ab 15:00) → **nächster Werktag 09:00**
+  (ab morgen; Sonntag wird übersprungen, Samstag zählt als Werktag → Fr 16:00 ⇒ Sa 09:00)
 
 ---
 
@@ -136,6 +144,19 @@ Siehe `.env.example`. Kurzüberblick:
   (Turnstile rendert/prüft nur, wenn gesetzt – sonst bleibt das Formular nutzbar).
 
 ---
+
+## Turnstile aktivieren
+
+Der Spam-Schutz (Cloudflare Turnstile) ist **bedingt**: Das Widget rendert und
+wird serverseitig geprüft **nur, wenn beide ENV-Variablen gesetzt sind** – sonst
+bleibt das Formular voll funktionsfähig (ohne CAPTCHA). Zum Aktivieren beide
+Variablen in Vercel hinterlegen (Prod + Preview) und neu deployen:
+
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` — Site-Key (Client, rendert das Widget)
+- `TURNSTILE_SECRET_KEY` — Secret-Key (Server, prüft den Token)
+
+Beide Keys stammen aus dem Cloudflare-Turnstile-Dashboard (eine Site für die
+Domain diebianco.de anlegen). Fehlt nur einer der beiden, bleibt der Schutz aus.
 
 ## Testen
 
