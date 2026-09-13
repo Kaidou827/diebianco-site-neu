@@ -172,8 +172,8 @@ werden als **Unix-Millisekunden** geschrieben.
 | Job | Route | Ziel (Berlin) | UTC (CEST/CET) | Auswahl |
 |---|---|---|---|---|
 | Digest | `/api/cron/digest` | Mo–Sa 08:30 | 06:30 / 07:30 | `lead_status_intern ∈ {neu, nicht_erreicht}`, sortiert Priorität→createdate |
-| Nicht erreicht | `/api/cron/nicht-erreicht` | tägl. 10:00 | 08:00 / 09:00 | `nicht_erreicht`, ≥48 h seit `hs_lastmodifieddate`, Zähler-Stufen 1→2 |
-| Termine | `/api/cron/termine` | tägl. 09:00 (+16:00) | 07:00 (+14:00) / 08:00 (+15:00) | `termin_vereinbart` + `termin_datum`; Bestätigung/Erinnerung/Status-Aufgabe; optional Bewertung |
+| Nicht erreicht | `/api/cron/nicht-erreicht` | tägl. 10:00 | 08:00 / 09:00 | `nicht_erreicht`, ≥48 h seit `nicht_erreicht_seit`, Zähler-Stufen 1→2 |
+| Termine | `/api/cron/termine` | tägl. 09:00 + 16:00 | 07:00 + 14:00 / 08:00 + 15:00 | `termin_vereinbart` + `termin_datum`; Bestätigung/Erinnerung (Schalter `TERMIN_MAILS_ENABLED`), Status-Aufgabe, optional Bewertung |
 | Reaktivierung | `/api/cron/reaktivierung` | Mo 09:30 | 07:30 / 08:30 | `einwilligung_marketing`, alt ≥30 Tage, offener Status |
 
 > **Winterzeit:** UTC-Crons verschieben sich nicht – im Winter laufen die Jobs
@@ -182,13 +182,12 @@ werden als **Unix-Millisekunden** geschrieben.
 
 ### Betriebsmodell
 
-- **Hobby-Plan (max. 2 Crons, nur täglich):** `vercel.json` definiert **einen**
-  Orchestrator `/api/cron/daily` um **07:30 UTC**, der alle Teiljobs in fester
-  Reihenfolge aufruft (Digest → Nicht erreicht → Termine → Reaktivierung).
-  Die Einzelrouten existieren und sind einzeln aufrufbar.
-  *Grenze:* Der zweite Termin-Lauf (16:00) ist auf Hobby nicht möglich →
-  Erinnerungen für Abend-Termine können knapp werden (siehe 20–32-h-Fenster).
-- **Pro-Plan (Einzel-Crons):** `vercel.json` auf die Einzelrouten umstellen:
+- **Aktuell: Pro-Plan mit Einzel-Crons** (so in `vercel.json`): Digest Mo–Sa
+  06:30 UTC, Nicht-erreicht 08:00, Termine 07:00 **und** 14:00, Reaktivierung
+  Mo 07:30 – die UTC-Zeiten entsprechen den Berlin-Zielzeiten im Sommer (im
+  Winter 1 h früher, unkritisch). `/api/cron/daily` ist **nicht geplant**,
+  bleibt aber als **manuell aufrufbarer Fallback** und führt alle Jobs
+  nacheinander aus.
 
   ```json
   {
@@ -201,6 +200,10 @@ werden als **Unix-Millisekunden** geschrieben.
     ]
   }
   ```
+- **Hobby-Alternative (max. 2 Crons, nur täglich):** stattdessen nur
+  `{ "path": "/api/cron/daily", "schedule": "30 7 * * *" }` planen. *Grenze:*
+  der zweite Termin-Lauf (16:00) entfällt → Erinnerungen für Abend-Termine
+  können knapp werden (siehe 20–32-h-Fenster).
 
 ### Absicherung & Dry-Run
 
@@ -217,9 +220,12 @@ werden als **Unix-Millisekunden** geschrieben.
 - `review_mail_gesendet` (datetime) – Idempotenz der Bewertungsbitte.
 - `termin_status_aufgabe_gesendet` (datetime) – verhindert tägliche Doppel-Aufgaben
   beim „Status setzen"-Nudge.
-- `nicht_erreicht_seit` wurde **nicht** angelegt – als Signal dient
-  `hs_lastmodifieddate` (Caveat: wird durch jede Änderung zurückgesetzt; für den
-  Nachfass-Rhythmus ausreichend, da Teresas Statuswechsel die Uhr neu stellt).
+- `nicht_erreicht_seit` (datetime) – **Anker** für den Nachfass-Rhythmus. Der Job
+  stempelt sie beim ersten Antreffen von `lead_status_intern=nicht_erreicht`
+  (wenn leer); 48 h / 5 Tage zählen ab diesem Stempel (nicht ab `hs_lastmodifieddate`,
+  das jede Pflege-Änderung zurücksetzen würde). Wechselt der Status weg von
+  `nicht_erreicht`, leert der Job den Anker und setzt `nicht_erreicht_mails_gesendet`
+  auf 0 – ein späteres erneutes „nicht erreicht" zählt damit von vorn.
 
 ### Einwilligung & Abmeldung
 
@@ -238,8 +244,24 @@ werden als **Unix-Millisekunden** geschrieben.
 | `CRON_SECRET` | Bearer-Token zum Schutz der Cron-Routen (Vercel sendet ihn automatisch) |
 | `ABMELDE_SECRET` | HMAC-Secret für Abmelde-Tokens |
 | `MEETINGS_LINK_RUECKRUF` | optionaler Rückruf-Buchungslink (Nicht-erreicht-Mail); leer → Satz entfällt |
-| `REVIEW_MAIL_ENABLED` | `true` aktiviert die Bewertungsbitte |
+| `REVIEW_MAIL_ENABLED` | `true` aktiviert die Bewertungsbitte (bleibt vorerst `false`) |
 | `GOOGLE_REVIEW_URL` | Ziel der Bewertungsbitte |
+| `TERMIN_MAILS_ENABLED` | `true` aktiviert Terminbestätigung + -erinnerung aus HubSpot (Default aus – StudioLution übernimmt die Erinnerung) |
+
+### Was läuft wo (HubSpot vs. StudioLution)
+
+Klare Aufteilung, um Doppel-Mails zu vermeiden:
+
+- **HubSpot (dieses System) = vor dem Termin:** Lead-Aufbereitung, Digest,
+  Nachfassen („nicht erreicht"), Reaktivierung – alles bis zur Terminvereinbarung.
+- **StudioLution (Salon-Software) = rund um den Termin:** Terminbestätigung und
+  -erinnerung verschickt StudioLution selbst.
+
+Deshalb sind die HubSpot-Terminmails (Job 3a/3b) über `TERMIN_MAILS_ENABLED`
+**standardmäßig aus**. Ob HubSpot zusätzlich erinnern soll, entscheidet die
+Inhaberin; bei „ja" einfach `TERMIN_MAILS_ENABLED=true` setzen. Unabhängig davon
+aktiv bleiben die **Status-Aufgabe nach dem Termin** (3c) und – nach Freigabe über
+`REVIEW_MAIL_ENABLED` – die **Bewertungsbitte** (3d).
 
 ## Testen
 
