@@ -41,9 +41,16 @@ test("Freitag ab 15:00 → Samstag 09:00 (Samstag zählt als Werktag)", () => {
   assert.equal(r.h, 9)
 })
 
-test("Samstag → Montag 09:00 (Sonntag wird übersprungen)", () => {
-  // Samstag 10.01.2026 09:00 Berlin → Montag 09:00
+test("Samstag vor 12:00 → Samstag 13:00", () => {
+  // Samstag 10.01.2026 09:00 Berlin (= 08:00 UTC) → Samstag 13:00
   const r = berlin(faelligkeitTimestamp(new Date("2026-01-10T08:00:00Z")))
+  assert.equal(r.wd, "Sat")
+  assert.equal(r.h, 13)
+})
+
+test("Samstag ab 12:00 → Montag 09:00 (Sonntag wird übersprungen)", () => {
+  // Samstag 10.01.2026 13:00 Berlin (= 12:00 UTC) → Montag 09:00
+  const r = berlin(faelligkeitTimestamp(new Date("2026-01-10T12:00:00Z")))
   assert.equal(r.wd, "Mon")
   assert.equal(r.h, 9)
 })

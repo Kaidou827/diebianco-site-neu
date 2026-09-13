@@ -197,14 +197,18 @@ function berlinTeile(ms: number): { y: number; mo: number; d: number; dow: numbe
 /**
  * Fälligkeit (Epoch-ms) der Rückruf-Aufgabe:
  *   - Mo–Fr, Eingang vor 15:00 (Berlin) → heute 17:00
- *   - sonst → nächster Werktag 09:00 (ab morgen; Sonntag wird übersprungen,
- *     Samstag zählt als Werktag → z. B. Fr 16:00 → Sa 09:00)
+ *   - Sa, Eingang vor 12:00 → heute 13:00
+ *   - sonst (Sa ab 12:00, So, Mo–Fr ab 15:00) → nächster Werktag 09:00
+ *     (ab morgen; Sonntag wird übersprungen, Samstag zählt → Fr 16:00 → Sa 09:00)
  */
 export function faelligkeitTimestamp(eingang: Date = new Date()): number {
   const ms = eingang.getTime()
   const t = berlinTeile(ms)
   if (t.dow >= 1 && t.dow <= 5 && t.min < 15 * 60) {
     return berlinZuMs(t.y, t.mo, t.d, 17, 0)
+  }
+  if (t.dow === 6 && t.min < 12 * 60) {
+    return berlinZuMs(t.y, t.mo, t.d, 13, 0)
   }
   let tagMs = ms
   for (let i = 0; i < 8; i++) {
