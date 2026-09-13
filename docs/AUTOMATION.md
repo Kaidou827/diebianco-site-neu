@@ -160,9 +160,91 @@ Variablen in Vercel hinterlegen (Prod + Preview) und neu deployen:
 Beide Keys stammen aus dem Cloudflare-Turnstile-Dashboard (eine Site für die
 Domain diebianco.de anlegen). Fehlt nur einer der beiden, bleibt der Schutz aus.
 
+## Zeitgesteuerte Jobs (Vercel Cron)
+
+Ohne HubSpot-Workflows übernimmt **Vercel Cron** die zeitgesteuerten Aufgaben.
+Cron-Zeiten sind **UTC**; die Berlin-Zeit (Sommer/Winter) wird **im Code** geprüft
+(jeder Job entscheidet selbst über Wochentag/Zeitfenster). Alle Zeit-Properties
+werden als **Unix-Millisekunden** geschrieben.
+
+### Jobs & Zielzeiten
+
+| Job | Route | Ziel (Berlin) | UTC (CEST/CET) | Auswahl |
+|---|---|---|---|---|
+| Digest | `/api/cron/digest` | Mo–Sa 08:30 | 06:30 / 07:30 | `lead_status_intern ∈ {neu, nicht_erreicht}`, sortiert Priorität→createdate |
+| Nicht erreicht | `/api/cron/nicht-erreicht` | tägl. 10:00 | 08:00 / 09:00 | `nicht_erreicht`, ≥48 h seit `hs_lastmodifieddate`, Zähler-Stufen 1→2 |
+| Termine | `/api/cron/termine` | tägl. 09:00 (+16:00) | 07:00 (+14:00) / 08:00 (+15:00) | `termin_vereinbart` + `termin_datum`; Bestätigung/Erinnerung/Status-Aufgabe; optional Bewertung |
+| Reaktivierung | `/api/cron/reaktivierung` | Mo 09:30 | 07:30 / 08:30 | `einwilligung_marketing`, alt ≥30 Tage, offener Status |
+
+> **Winterzeit:** UTC-Crons verschieben sich nicht – im Winter laufen die Jobs
+> eine Stunde früher (Berlin). Das ist unkritisch, weil die Jobs Wochentag/
+> Fenster selbst prüfen (kein exakter Uhrzeit-Gate).
+
+### Betriebsmodell
+
+- **Hobby-Plan (max. 2 Crons, nur täglich):** `vercel.json` definiert **einen**
+  Orchestrator `/api/cron/daily` um **07:30 UTC**, der alle Teiljobs in fester
+  Reihenfolge aufruft (Digest → Nicht erreicht → Termine → Reaktivierung).
+  Die Einzelrouten existieren und sind einzeln aufrufbar.
+  *Grenze:* Der zweite Termin-Lauf (16:00) ist auf Hobby nicht möglich →
+  Erinnerungen für Abend-Termine können knapp werden (siehe 20–32-h-Fenster).
+- **Pro-Plan (Einzel-Crons):** `vercel.json` auf die Einzelrouten umstellen:
+
+  ```json
+  {
+    "crons": [
+      { "path": "/api/cron/digest",         "schedule": "30 6 * * 1-6" },
+      { "path": "/api/cron/nicht-erreicht", "schedule": "0 8 * * *" },
+      { "path": "/api/cron/termine",        "schedule": "0 7 * * *" },
+      { "path": "/api/cron/termine",        "schedule": "0 14 * * *" },
+      { "path": "/api/cron/reaktivierung",  "schedule": "30 7 * * 1" }
+    ]
+  }
+  ```
+
+### Absicherung & Dry-Run
+
+- Alle Cron-Routen prüfen `Authorization: Bearer ${CRON_SECRET}` (Vercel setzt
+  den Header bei Cron-Aufrufen automatisch). Ohne gesetztes `CRON_SECRET` bleibt
+  die Route offen (nur Dev).
+- `?dry=1` = **Dry-Run**: nur zählen/loggen, nichts senden, nichts schreiben.
+- Jeder Job loggt und liefert: **geprüft / gesendet / übersprungen / Fehler**.
+- Lokal testen:
+  `curl -H "Authorization: Bearer $CRON_SECRET" "http://localhost:3000/api/cron/daily?dry=1"`
+
+### Zusätzliche Properties (heute angelegt)
+
+- `review_mail_gesendet` (datetime) – Idempotenz der Bewertungsbitte.
+- `termin_status_aufgabe_gesendet` (datetime) – verhindert tägliche Doppel-Aufgaben
+  beim „Status setzen"-Nudge.
+- `nicht_erreicht_seit` wurde **nicht** angelegt – als Signal dient
+  `hs_lastmodifieddate` (Caveat: wird durch jede Änderung zurückgesetzt; für den
+  Nachfass-Rhythmus ausreichend, da Teresas Statuswechsel die Uhr neu stellt).
+
+### Einwilligung & Abmeldung
+
+- **Transaktional** (kein Opt-in nötig): Terminbestätigung, -erinnerung,
+  Nicht-erreicht-Mails.
+- **Marketing** (nur bei `einwilligung_marketing = true`): Reaktivierung, Bewertungsbitte.
+- Jede Kunden-Mail trägt einen **Abmeldelink** `/api/abmelden?t={Token}`
+  (HMAC aus Kontakt-ID + `ABMELDE_SECRET`). Der Link setzt `einwilligung_marketing`
+  auf `false` und zeigt eine schlichte Bestätigungsseite. Ohne `ABMELDE_SECRET`
+  entfällt der Link.
+
+### Cron-ENV-Variablen
+
+| Variable | Zweck |
+|---|---|
+| `CRON_SECRET` | Bearer-Token zum Schutz der Cron-Routen (Vercel sendet ihn automatisch) |
+| `ABMELDE_SECRET` | HMAC-Secret für Abmelde-Tokens |
+| `MEETINGS_LINK_RUECKRUF` | optionaler Rückruf-Buchungslink (Nicht-erreicht-Mail); leer → Satz entfällt |
+| `REVIEW_MAIL_ENABLED` | `true` aktiviert die Bewertungsbitte |
+| `GOOGLE_REVIEW_URL` | Ziel der Bewertungsbitte |
+
 ## Testen
 
-- **Unit-Tests:** `pnpm test` (Ableitungen, Fälligkeit inkl. Wochenende/Zeitzone, E.164).
+- **Unit-Tests:** `pnpm test` (Ableitungen, Fälligkeit inkl. Wochenende/Zeitzone, E.164,
+  Cron-Zeitfenster/Zähler/Auswahlfilter).
 - **Integration lokal:** `pnpm dev`, dann `pnpm test:anfrage` – schickt eine
   Anfrage `TEST Foundryone` / `test+<timestamp>@foundryone.de` gegen die lokale
   API (erzeugt echten Kontakt + Aufgabe + Mails). Test-Kontakte danach in
