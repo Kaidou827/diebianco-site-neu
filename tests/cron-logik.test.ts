@@ -55,19 +55,19 @@ test("Erinnerungsfenster: Winterzeit-Start (Wanduhr 24 h = real 25 h) → im Fen
 test("naechsteNichtErreichtStufe: Stufen & Sperren", () => {
   const basis = { status: "nicht_erreicht", nowMs: NOW, hasEmail: true }
   // Stufe 1: ≥48 h, Zähler 0
-  assert.equal(naechsteNichtErreichtStufe({ ...basis, lastmodMs: NOW - 50 * H, counter: 0 }), 1)
+  assert.equal(naechsteNichtErreichtStufe({ ...basis, ankerMs: NOW - 50 * H, counter: 0 }), 1)
   // <48 h → nichts
-  assert.equal(naechsteNichtErreichtStufe({ ...basis, lastmodMs: NOW - 40 * H, counter: 0 }), null)
+  assert.equal(naechsteNichtErreichtStufe({ ...basis, ankerMs: NOW - 40 * H, counter: 0 }), null)
   // Stufe 2: Zähler 1, ≥5 Tage
-  assert.equal(naechsteNichtErreichtStufe({ ...basis, lastmodMs: NOW - 6 * D, counter: 1 }), 2)
+  assert.equal(naechsteNichtErreichtStufe({ ...basis, ankerMs: NOW - 6 * D, counter: 1 }), 2)
   // Zähler 1, <5 Tage → nichts
-  assert.equal(naechsteNichtErreichtStufe({ ...basis, lastmodMs: NOW - 4 * D, counter: 1 }), null)
+  assert.equal(naechsteNichtErreichtStufe({ ...basis, ankerMs: NOW - 4 * D, counter: 1 }), null)
   // Zähler 2 → nichts mehr
-  assert.equal(naechsteNichtErreichtStufe({ ...basis, lastmodMs: NOW - 30 * D, counter: 2 }), null)
+  assert.equal(naechsteNichtErreichtStufe({ ...basis, ankerMs: NOW - 30 * D, counter: 2 }), null)
   // ohne E-Mail → nichts
-  assert.equal(naechsteNichtErreichtStufe({ ...basis, hasEmail: false, lastmodMs: NOW - 50 * H, counter: 0 }), null)
+  assert.equal(naechsteNichtErreichtStufe({ ...basis, hasEmail: false, ankerMs: NOW - 50 * H, counter: 0 }), null)
   // falscher Status → nichts
-  assert.equal(naechsteNichtErreichtStufe({ ...basis, status: "neu", lastmodMs: NOW - 50 * H, counter: 0 }), null)
+  assert.equal(naechsteNichtErreichtStufe({ ...basis, status: "neu", ankerMs: NOW - 50 * H, counter: 0 }), null)
 })
 
 // ── Termin-Aktionen ──────────────────────────────────────────────────────────
@@ -133,19 +133,26 @@ test("gemockte HubSpot-Zeile → Stufe 1", () => {
     id: "42",
     properties: {
       lead_status_intern: "nicht_erreicht",
-      hs_lastmodifieddate: String(NOW - 3 * D),
+      nicht_erreicht_seit: String(NOW - 3 * D),
       nicht_erreicht_mails_gesendet: "",
       email: "kundin@example.de",
     },
   }
   const stufe = naechsteNichtErreichtStufe({
     status: zeile.properties.lead_status_intern,
-    lastmodMs: parseHubspotMs(zeile.properties.hs_lastmodifieddate),
+    ankerMs: parseHubspotMs(zeile.properties.nicht_erreicht_seit),
     counter: parseZahl(zeile.properties.nicht_erreicht_mails_gesendet),
     nowMs: NOW,
     hasEmail: Boolean(zeile.properties.email),
   })
   assert.equal(stufe, 1)
+})
+
+test("kein Anker (nicht_erreicht_seit leer) → null (erst stempeln)", () => {
+  const stufe = naechsteNichtErreichtStufe({
+    status: "nicht_erreicht", ankerMs: null, counter: 0, nowMs: NOW, hasEmail: true,
+  })
+  assert.equal(stufe, null)
 })
 
 // ── Berlin-Zeit-Helfer ──────────────────────────────────────────────────────

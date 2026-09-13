@@ -53,6 +53,10 @@ const SITE = process.env.SITE_URL || "https://www.diebianco.de"
 const MEETINGS_LINK = process.env.MEETINGS_LINK_RUECKRUF || ""
 const REVIEW_AKTIV = process.env.REVIEW_MAIL_ENABLED === "true"
 const GOOGLE_REVIEW_URL = process.env.GOOGLE_REVIEW_URL || ""
+// Terminbestätigung/-erinnerung (Job 3a/3b): standardmäßig AUS, da StudioLution
+// die Termin-Erinnerung rund um den Termin selbst verschickt. Status-Aufgabe (3c)
+// und Bewertungsbitte (3d) laufen davon unabhängig.
+const TERMIN_MAILS_AKTIV = process.env.TERMIN_MAILS_ENABLED === "true"
 
 export interface JobOptionen {
   dryRun: boolean
@@ -143,6 +147,35 @@ export async function runDigest(opts: JobOptionen): Promise<JobErgebnis> {
 // ── Job 2: Nicht erreicht ────────────────────────────────────────────────────
 export async function runNichtErreicht(opts: JobOptionen): Promise<JobErgebnis> {
   const now = opts.now ?? new Date()
+  const erg = leer("nicht-erreicht", opts.dryRun)
+
+  // Reset-Pass: Kontakte mit gesetztem Anker, deren Status weg von nicht_erreicht
+  // gewechselt ist → Anker leeren + Zähler auf 0 (ein späteres erneutes
+  // „nicht erreicht" beginnt damit neu zu zählen).
+  const zurueckzusetzen = await sucheKontakteAlle({
+    filterGroups: [
+      {
+        filters: [
+          { propertyName: "nicht_erreicht_seit", operator: "HAS_PROPERTY" },
+          { propertyName: "lead_status_intern", operator: "NEQ", value: "nicht_erreicht" },
+        ],
+      },
+    ],
+    properties: ["lead_status_intern", "nicht_erreicht_seit"],
+  })
+  for (const z of zurueckzusetzen) {
+    erg.geprueft++
+    if (opts.dryRun) { erg.uebersprungen++; continue }
+    try {
+      await aktualisiereKontakt(z.id, { nicht_erreicht_seit: "", nicht_erreicht_mails_gesendet: "0" })
+      erg.uebersprungen++
+    } catch (err) {
+      console.error(`[nicht-erreicht/reset] Kontakt ${z.id} fehlgeschlagen:`, err)
+      erg.fehler++
+    }
+  }
+
+  // Haupt-Pass: aktuell nicht erreichte Kontakte (mit E-Mail).
   const zeilen = await sucheKontakteAlle({
     filterGroups: [
       {
@@ -154,17 +187,34 @@ export async function runNichtErreicht(opts: JobOptionen): Promise<JobErgebnis> 
     ],
     properties: [
       "firstname", "phone", "email", "wunschzeitraum",
-      "nicht_erreicht_mails_gesendet", "hs_lastmodifieddate", "lead_status_intern",
+      "nicht_erreicht_mails_gesendet", "nicht_erreicht_seit", "lead_status_intern",
     ],
   })
 
-  const erg = leer("nicht-erreicht", opts.dryRun)
   for (const z of zeilen) {
     erg.geprueft++
     const email = prop(z, "email")
+    const ankerMs = parseHubspotMs(prop(z, "nicht_erreicht_seit"))
+
+    // Noch kein Anker → jetzt stempeln; diese Runde nichts senden (48 h / 5 Tage
+    // rechnen ab diesem Stempel).
+    if (ankerMs == null) {
+      if (!opts.dryRun) {
+        try {
+          await aktualisiereKontakt(z.id, { nicht_erreicht_seit: String(now.getTime()) })
+        } catch (err) {
+          console.error(`[nicht-erreicht/stempel] Kontakt ${z.id} fehlgeschlagen:`, err)
+          erg.fehler++
+          continue
+        }
+      }
+      erg.uebersprungen++
+      continue
+    }
+
     const stufe = naechsteNichtErreichtStufe({
       status: prop(z, "lead_status_intern"),
-      lastmodMs: parseHubspotMs(prop(z, "hs_lastmodifieddate")),
+      ankerMs,
       counter: parseZahl(prop(z, "nicht_erreicht_mails_gesendet")),
       nowMs: now.getTime(),
       hasEmail: Boolean(email),
@@ -228,9 +278,9 @@ export async function runTermine(opts: JobOptionen): Promise<JobErgebnis> {
     })
     const aufgabeGesendet = Boolean(prop(z, "termin_status_aufgabe_gesendet"))
     const email = prop(z, "email")
-    // Mails nur mit E-Mail-Adresse; die Status-Aufgabe geht immer.
-    const bestaetigen = akt.bestaetigen && Boolean(email)
-    const erinnern = akt.erinnern && Boolean(email)
+    // Mails nur mit E-Mail-Adresse UND wenn der Schalter an ist; die Status-Aufgabe geht immer.
+    const bestaetigen = akt.bestaetigen && Boolean(email) && TERMIN_MAILS_AKTIV
+    const erinnern = akt.erinnern && Boolean(email) && TERMIN_MAILS_AKTIV
     if (!bestaetigen && !erinnern && !(akt.aufgabe && !aufgabeGesendet)) {
       erg.uebersprungen++
       continue

@@ -58,21 +58,22 @@ export function sortiereDigest<T extends DigestZeile>(zeilen: T[]): T[] {
 // ── Nicht erreicht (Stufen-Zähler) ──────────────────────────────────────────
 export interface NichtErreichtEingabe {
   status: string
-  lastmodMs: number | null
+  /** Anker = `nicht_erreicht_seit` (wird beim ersten Antreffen gestempelt). */
+  ankerMs: number | null
   counter: number
   nowMs: number
   hasEmail: boolean
 }
 
 /**
- * Nächste fällige Nicht-erreicht-Stufe:
- *   1  → erste Mail (Status nicht_erreicht, ≥48 h seit letzter Änderung, Zähler 0)
- *   2  → zweite Mail (Zähler 1, ≥5 Tage seit letzter Änderung)
- *   null → nichts zu tun
+ * Nächste fällige Nicht-erreicht-Stufe (gerechnet ab `nicht_erreicht_seit`):
+ *   1  → erste Mail (Status nicht_erreicht, ≥48 h seit Anker, Zähler 0)
+ *   2  → zweite Mail (Zähler 1, ≥5 Tage seit Anker)
+ *   null → nichts zu tun (auch wenn der Anker noch fehlt → erst stempeln)
  */
 export function naechsteNichtErreichtStufe(e: NichtErreichtEingabe): 1 | 2 | null {
-  if (e.status !== "nicht_erreicht" || !e.hasEmail || e.lastmodMs == null) return null
-  const seit = e.nowMs - e.lastmodMs
+  if (e.status !== "nicht_erreicht" || !e.hasEmail || e.ankerMs == null) return null
+  const seit = e.nowMs - e.ankerMs
   if (e.counter <= 0) return seit >= 48 * MS_STUNDE ? 1 : null
   if (e.counter === 1) return seit >= 5 * MS_TAG ? 2 : null
   return null
