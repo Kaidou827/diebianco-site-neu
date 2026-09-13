@@ -243,7 +243,7 @@ export function behandlungsDauer(slug: string): string {
   const map: Record<string, string> = {
     schnitt_styling: "ca. 1–1,5 Stunden",
     farbe_ansatz: "ca. 2–3 Stunden",
-    straehnen_blondierung: "ca. 3–5 Stunden",
+    straehnen_blondierung: "ca. 2–4 Stunden",
     balayage: "ca. 3–5 Stunden",
     grey_blending: "ca. 3–5 Stunden",
     keratin: "ca. 2–3 Stunden",
