@@ -168,11 +168,18 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
   if (wunschzeitraum) properties.wunschzeitraum = wunschzeitraum
   if (whatsappOk) properties.whatsapp_ok = whatsappOk
   if (nachricht) properties.nachricht_anfrage = nachricht
-  // Kampagnen-Attribution (liefert das Frontend ggf. später)
+  // Kampagnen-Attribution → gleichnamige Properties.
   for (const key of ["gclid", "utm_source", "utm_medium", "utm_campaign"] as const) {
     const v = String(tracking[key] ?? body[key] ?? "").trim()
     if (v) properties[key] = v
   }
+  // gbraid/wbraid/utm_term bewusst NICHT als Property – nur ins Log.
+  const nurLog: Record<string, string> = {}
+  for (const key of ["gbraid", "wbraid", "utm_term"] as const) {
+    const v = String(tracking[key] ?? body[key] ?? "").trim()
+    if (v) nurLog[key] = v
+  }
+  if (Object.keys(nurLog).length) console.log("Attribution (nur Log, keine Property):", nurLog)
   // Marketing-Einwilligung nur SETZEN, nie automatisch widerrufen.
   if (einwilligungMarketing) {
     properties.einwilligung_marketing = "true"

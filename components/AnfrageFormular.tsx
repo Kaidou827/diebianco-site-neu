@@ -54,6 +54,26 @@ const FARB_WERTE = new Set(FARB_BEHANDLUNGEN.map(optionWert))
 const WHATSAPP_JA = optionWert("Ja, gerne")
 const UNSICHER = optionWert("Weiß ich noch nicht")
 
+// Kampagnen-Attribution: First-Touch, in sessionStorage gepuffert.
+const ATTRIB_KEYS = ["gclid", "gbraid", "wbraid", "utm_source", "utm_medium", "utm_campaign", "utm_term"] as const
+const ATTRIB_STORAGE = "db_attribution"
+
+/** Attribution auslesen: sessionStorage bevorzugt (First-Touch), Fallback URL. */
+function leseAttribution(): Record<string, string> {
+  if (typeof window === "undefined") return {}
+  let gespeichert: Record<string, string> = {}
+  try {
+    gespeichert = JSON.parse(sessionStorage.getItem(ATTRIB_STORAGE) || "{}") as Record<string, string>
+  } catch {}
+  const params = new URLSearchParams(window.location.search)
+  const out: Record<string, string> = {}
+  for (const k of ATTRIB_KEYS) {
+    const v = gespeichert[k] || params.get(k) || ""
+    if (v) out[k] = v
+  }
+  return out
+}
+
 const KURZ: Record<string, string> = {
   wunsch_behandlung: "Behandlung",
   haarlaenge: "Haarlänge",
@@ -165,6 +185,25 @@ export default function AnfrageFormular({
     return () => io.disconnect()
   }, [])
 
+  // Kampagnen-Parameter beim ersten Kontakt (First-Touch) sichern – vorhandene
+  // Werte werden nicht überschrieben.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const gespeichert = JSON.parse(sessionStorage.getItem(ATTRIB_STORAGE) || "{}") as Record<string, string>
+      let geaendert = false
+      for (const k of ATTRIB_KEYS) {
+        const v = params.get(k)
+        if (v && !gespeichert[k]) {
+          gespeichert[k] = v
+          geaendert = true
+        }
+      }
+      if (geaendert) sessionStorage.setItem(ATTRIB_STORAGE, JSON.stringify(gespeichert))
+    } catch {}
+  }, [])
+
   const set = (name: string, value: string) => setDaten((d) => ({ ...d, [name]: value }))
 
   const sanftInSicht = () => {
@@ -219,6 +258,7 @@ export default function AnfrageFormular({
     setFehler("")
     try {
       const quelleSeite = typeof window !== "undefined" ? window.location.pathname : ""
+      const tracking = leseAttribution()
 
       const res = await fetch("/api/anfrage", {
         method: "POST",
@@ -236,6 +276,7 @@ export default function AnfrageFormular({
           nachricht: daten.nachricht.trim() || undefined,
           einwilligung_marketing: einwilligung,
           quelle_seite: quelleSeite || undefined,
+          tracking: Object.keys(tracking).length ? tracking : undefined,
           honeypot,
           turnstileToken: isTurnstileEnabled ? turnstileToken : undefined,
           spamProtectionRequired: isTurnstileEnabled,
