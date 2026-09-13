@@ -54,6 +54,58 @@ export async function sucheKontaktId(email: string): Promise<string | null> {
   return json.results?.[0]?.id ?? null
 }
 
+export interface KontaktZeile {
+  id: string
+  properties: Record<string, string | null>
+}
+
+export interface SucheOptionen {
+  filterGroups: unknown[]
+  properties: string[]
+  sorts?: unknown[]
+  limit?: number
+  after?: string
+}
+
+/** Eine Seite der Kontakt-Suche (Search API mit Filtern). */
+export async function sucheKontakte(
+  opt: SucheOptionen,
+): Promise<{ results: KontaktZeile[]; after?: string; total: number }> {
+  const res = await hsFetch("/crm/v3/objects/contacts/search", {
+    method: "POST",
+    body: JSON.stringify({
+      filterGroups: opt.filterGroups,
+      properties: opt.properties,
+      sorts: opt.sorts,
+      limit: opt.limit ?? 100,
+      after: opt.after,
+    }),
+  })
+  if (!res.ok) throw new Error(`Kontaktsuche fehlgeschlagen: ${res.status} ${await res.text()}`)
+  const json = (await res.json()) as {
+    results?: KontaktZeile[]
+    total?: number
+    paging?: { next?: { after?: string } }
+  }
+  return { results: json.results ?? [], after: json.paging?.next?.after, total: json.total ?? 0 }
+}
+
+/**
+ * Alle Treffer der Suche paginiert einsammeln (mit Seiten-Obergrenze als
+ * Sicherheitsnetz, damit nie „alle Kontakte" unkontrolliert geladen werden).
+ */
+export async function sucheKontakteAlle(opt: SucheOptionen, maxSeiten = 25): Promise<KontaktZeile[]> {
+  const alle: KontaktZeile[] = []
+  let after = opt.after
+  for (let i = 0; i < maxSeiten; i++) {
+    const seite = await sucheKontakte({ ...opt, after })
+    alle.push(...seite.results)
+    if (!seite.after) break
+    after = seite.after
+  }
+  return alle
+}
+
 /** Ausgewählte Properties eines Kontakts lesen (für Idempotenz-Check). */
 export async function leseKontakt(id: string, properties: string[]): Promise<Record<string, string | null>> {
   const query = properties.length ? `?properties=${properties.join(",")}` : ""
