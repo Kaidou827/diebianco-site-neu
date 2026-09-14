@@ -218,3 +218,50 @@ export function faelligkeitTimestamp(eingang: Date = new Date()): number {
   }
   return berlinZuMs(t.y, t.mo, t.d, 9, 0) // theoretischer Fallback
 }
+
+/** Berliner Wochentag (1 = Montag … 7 = Sonntag) für einen Zeitpunkt. */
+export function berlinWochentag(date: Date = new Date()): number {
+  return berlinTeile(date.getTime()).dow
+}
+
+/** Berliner Monat (1–12) für einen Zeitpunkt. */
+export function berlinMonat(date: Date = new Date()): number {
+  return berlinTeile(date.getTime()).mo
+}
+
+/** Epoch-ms für „heute (Berlin) um h:m" relativ zum gegebenen Zeitpunkt. */
+export function berlinHeuteUmMs(h: number, m: number, date: Date = new Date()): number {
+  const t = berlinTeile(date.getTime())
+  return berlinZuMs(t.y, t.mo, t.d, h, m)
+}
+
+/**
+ * Grobe Dauer je Behandlung (für die Terminbestätigung).
+ * Leerer String → keine Dauer-Zeile anzeigen.
+ */
+export function behandlungsDauer(slug: string): string {
+  const map: Record<string, string> = {
+    schnitt_styling: "ca. 1–1,5 Stunden",
+    farbe_ansatz: "ca. 2–3 Stunden",
+    straehnen_blondierung: "ca. 2–4 Stunden",
+    balayage: "ca. 3–5 Stunden",
+    grey_blending: "ca. 3–5 Stunden",
+    keratin: "ca. 2–3 Stunden",
+    beratungsgespraech: "ca. 30 Minuten",
+  }
+  return map[slug] ?? ""
+}
+
+/**
+ * Liegt der Termin im Erinnerungsfenster (Default 20–32 h vor dem Termin)?
+ * Reine Millisekunden-Differenz → unabhängig von der Sommer-/Winterzeit.
+ */
+export function istErinnerungsfenster(
+  terminMs: number,
+  nowMs: number,
+  minH = 20,
+  maxH = 32,
+): boolean {
+  const diffH = (terminMs - nowMs) / (60 * 60 * 1000)
+  return diffH >= minH && diffH <= maxH
+}

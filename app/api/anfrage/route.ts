@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import nodemailer from "nodemailer"
 import { FELDER } from "@/lib/hubspot/schema"
 import {
   behandlungLabel,
@@ -19,7 +18,8 @@ import {
   leseKontakt,
   sucheKontaktId,
 } from "@/lib/hubspot"
-import { eingangsbestaetigung, salonBenachrichtigung, type EmailInhalt } from "@/lib/email-texts"
+import { eingangsbestaetigung, salonBenachrichtigung } from "@/lib/email-texts"
+import { sendeMail, MAIL_EMPFAENGER, MAIL_REPLYTO } from "@/lib/mailer"
 
 /**
  * POST /api/anfrage
@@ -44,43 +44,8 @@ const OWNER_ID = process.env.HUBSPOT_DEFAULT_OWNER_ID || "81184186"
 // Aufgabe/Mail (Serverless-tauglich, da am Kontakt hinterlegt statt In-Memory).
 const IDEMPOTENZ_MS = 5 * 60 * 1000
 
-// ── E-Mail-Konfiguration ────────────────────────────────────────────────────
-const MAIL_EMPFAENGER = process.env.MAIL_TO
-  ? process.env.MAIL_TO.split(/[;,]/).map((s) => s.trim()).filter(Boolean)
-  : ["salon@diebianco.de", "scharam.saleh@gmail.com"]
-const MAIL_ABSENDER = process.env.MAIL_FROM || process.env.SMTP_USER || "termine@diebianco.de"
-const MAIL_ABSENDER_NAME = process.env.MAIL_FROM_NAME || "DIE BIANCO"
-const MAIL_FROM_FULL = `${MAIL_ABSENDER_NAME} <${MAIL_ABSENDER}>`
-const MAIL_REPLYTO = process.env.MAIL_REPLYTO || "salon@diebianco.de"
-
 /** Nur diese Property-Namen dürfen aus Welle 2 (Formular) geschrieben werden. */
 const ERLAUBTE_FELDER = new Set(FELDER.filter((f) => f.welle !== "workflow").map((f) => f.hubspotName))
-
-function baueTransporter() {
-  const host = process.env.SMTP_HOST
-  const port = Number(process.env.SMTP_PORT)
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
-  if (!host || !port || Number.isNaN(port) || !user || !pass) {
-    console.warn("SMTP unvollständig — E-Mail übersprungen.")
-    return null
-  }
-  const secure = process.env.SMTP_SECURE === "true" || port === 465
-  return nodemailer.createTransport({ host, port, secure, auth: { user, pass } })
-}
-
-async function sendeMail(opts: { to: string | string[]; replyTo?: string; inhalt: EmailInhalt }): Promise<void> {
-  const transporter = baueTransporter()
-  if (!transporter) return
-  await transporter.sendMail({
-    from: MAIL_FROM_FULL,
-    to: opts.to,
-    replyTo: opts.replyTo,
-    subject: opts.inhalt.subject,
-    text: opts.inhalt.text,
-    html: opts.inhalt.html,
-  })
-}
 
 // ── Cloudflare Turnstile ────────────────────────────────────────────────────
 async function turnstileGueltig(token: string, ip: string): Promise<boolean> {
@@ -224,6 +189,7 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
       timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short",
     }).format(jetzt)
     const prioMap: Record<string, "HIGH" | "MEDIUM" | "LOW"> = { hoch: "HIGH", mittel: "MEDIUM", niedrig: "LOW" }
+    const faellig = faelligkeitTimestamp(jetzt)
 
     const aufgabe = await erstelleAufgabe({
       contactId,
@@ -235,7 +201,9 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
         `Priorität: ${prioritaet}`,
         `Eingang: ${eingangStr}`,
       ].join("\n"),
-      timestampMs: faelligkeitTimestamp(jetzt),
+      timestampMs: faellig,
+      // Erinnerung zur Fälligkeit → Teresa bekommt einen Push.
+      reminderMs: faellig,
       priority: prioMap[prioritaet] || "MEDIUM",
       ownerId: OWNER_ID,
     })

@@ -54,6 +54,58 @@ export async function sucheKontaktId(email: string): Promise<string | null> {
   return json.results?.[0]?.id ?? null
 }
 
+export interface KontaktZeile {
+  id: string
+  properties: Record<string, string | null>
+}
+
+export interface SucheOptionen {
+  filterGroups: unknown[]
+  properties: string[]
+  sorts?: unknown[]
+  limit?: number
+  after?: string
+}
+
+/** Eine Seite der Kontakt-Suche (Search API mit Filtern). */
+export async function sucheKontakte(
+  opt: SucheOptionen,
+): Promise<{ results: KontaktZeile[]; after?: string; total: number }> {
+  const res = await hsFetch("/crm/v3/objects/contacts/search", {
+    method: "POST",
+    body: JSON.stringify({
+      filterGroups: opt.filterGroups,
+      properties: opt.properties,
+      sorts: opt.sorts,
+      limit: opt.limit ?? 100,
+      after: opt.after,
+    }),
+  })
+  if (!res.ok) throw new Error(`Kontaktsuche fehlgeschlagen: ${res.status} ${await res.text()}`)
+  const json = (await res.json()) as {
+    results?: KontaktZeile[]
+    total?: number
+    paging?: { next?: { after?: string } }
+  }
+  return { results: json.results ?? [], after: json.paging?.next?.after, total: json.total ?? 0 }
+}
+
+/**
+ * Alle Treffer der Suche paginiert einsammeln (mit Seiten-Obergrenze als
+ * Sicherheitsnetz, damit nie „alle Kontakte" unkontrolliert geladen werden).
+ */
+export async function sucheKontakteAlle(opt: SucheOptionen, maxSeiten = 25): Promise<KontaktZeile[]> {
+  const alle: KontaktZeile[] = []
+  let after = opt.after
+  for (let i = 0; i < maxSeiten; i++) {
+    const seite = await sucheKontakte({ ...opt, after })
+    alle.push(...seite.results)
+    if (!seite.after) break
+    after = seite.after
+  }
+  return alle
+}
+
 /** Ausgewählte Properties eines Kontakts lesen (für Idempotenz-Check). */
 export async function leseKontakt(id: string, properties: string[]): Promise<Record<string, string | null>> {
   const query = properties.length ? `?properties=${properties.join(",")}` : ""
@@ -92,6 +144,8 @@ export interface AufgabeEingabe {
   priority: "HIGH" | "MEDIUM" | "LOW"
   ownerId: string
   type?: string
+  /** Erinnerungs-Zeitpunkt als Epoch-ms (hs_task_reminders); optional. */
+  reminderMs?: number
 }
 
 export interface AufgabeErgebnis {
@@ -99,6 +153,22 @@ export interface AufgabeErgebnis {
   id?: string
   status?: number
   fehler?: string
+}
+
+/** Task-Properties bauen (rein, testbar). */
+export function aufgabeProperties(a: AufgabeEingabe): Record<string, string> {
+  const p: Record<string, string> = {
+    hs_task_subject: a.subject,
+    hs_task_body: a.body,
+    hs_task_status: "NOT_STARTED",
+    hs_task_type: a.type || "CALL",
+    hs_task_priority: a.priority,
+    hs_timestamp: String(a.timestampMs),
+    hubspot_owner_id: a.ownerId,
+  }
+  // Erinnerung (Push zur Fälligkeit); nur setzen, wenn angefragt.
+  if (a.reminderMs != null) p.hs_task_reminders = String(a.reminderMs)
+  return p
 }
 
 /**
@@ -111,15 +181,7 @@ export async function erstelleAufgabe(a: AufgabeEingabe): Promise<AufgabeErgebni
     const res = await hsFetch("/crm/v3/objects/tasks", {
       method: "POST",
       body: JSON.stringify({
-        properties: {
-          hs_task_subject: a.subject,
-          hs_task_body: a.body,
-          hs_task_status: "NOT_STARTED",
-          hs_task_type: a.type || "CALL",
-          hs_task_priority: a.priority,
-          hs_timestamp: String(a.timestampMs),
-          hubspot_owner_id: a.ownerId,
-        },
+        properties: aufgabeProperties(a),
         associations: [
           {
             to: { id: a.contactId },

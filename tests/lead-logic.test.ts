@@ -1,6 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
+  behandlungsDauer,
   leadQualitaet,
   leadWertProxy,
   normalisiereTelefonE164,
@@ -44,6 +45,17 @@ test("Lead-Qualität: heiss nur bei hoch + konkretem Zeitraum", () => {
   assert.equal(leadQualitaet("hoch", ""), "warm")
   assert.equal(leadQualitaet("mittel", "vormittags"), "warm")
   assert.equal(leadQualitaet("niedrig", "samstag"), "warm")
+})
+
+test("Behandlungsdauer je Behandlung", () => {
+  assert.equal(behandlungsDauer("schnitt_styling"), "ca. 1–1,5 Stunden")
+  assert.equal(behandlungsDauer("farbe_ansatz"), "ca. 2–3 Stunden")
+  assert.equal(behandlungsDauer("straehnen_blondierung"), "ca. 2–4 Stunden")
+  assert.equal(behandlungsDauer("balayage"), "ca. 3–5 Stunden")
+  assert.equal(behandlungsDauer("grey_blending"), "ca. 3–5 Stunden")
+  assert.equal(behandlungsDauer("keratin"), "ca. 2–3 Stunden")
+  assert.equal(behandlungsDauer("beratungsgespraech"), "ca. 30 Minuten")
+  assert.equal(behandlungsDauer("weiss_ich_noch_nicht"), "")
 })
 
 test("Telefon nach E.164 normalisieren", () => {
