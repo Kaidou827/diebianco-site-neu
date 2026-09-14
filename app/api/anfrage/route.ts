@@ -189,6 +189,7 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
       timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short",
     }).format(jetzt)
     const prioMap: Record<string, "HIGH" | "MEDIUM" | "LOW"> = { hoch: "HIGH", mittel: "MEDIUM", niedrig: "LOW" }
+    const faellig = faelligkeitTimestamp(jetzt)
 
     const aufgabe = await erstelleAufgabe({
       contactId,
@@ -200,7 +201,9 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
         `Priorität: ${prioritaet}`,
         `Eingang: ${eingangStr}`,
       ].join("\n"),
-      timestampMs: faelligkeitTimestamp(jetzt),
+      timestampMs: faellig,
+      // Erinnerung zur Fälligkeit → Teresa bekommt einen Push.
+      reminderMs: faellig,
       priority: prioMap[prioritaet] || "MEDIUM",
       ownerId: OWNER_ID,
     })

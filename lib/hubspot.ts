@@ -144,6 +144,8 @@ export interface AufgabeEingabe {
   priority: "HIGH" | "MEDIUM" | "LOW"
   ownerId: string
   type?: string
+  /** Erinnerungs-Zeitpunkt als Epoch-ms (hs_task_reminders); optional. */
+  reminderMs?: number
 }
 
 export interface AufgabeErgebnis {
@@ -151,6 +153,22 @@ export interface AufgabeErgebnis {
   id?: string
   status?: number
   fehler?: string
+}
+
+/** Task-Properties bauen (rein, testbar). */
+export function aufgabeProperties(a: AufgabeEingabe): Record<string, string> {
+  const p: Record<string, string> = {
+    hs_task_subject: a.subject,
+    hs_task_body: a.body,
+    hs_task_status: "NOT_STARTED",
+    hs_task_type: a.type || "CALL",
+    hs_task_priority: a.priority,
+    hs_timestamp: String(a.timestampMs),
+    hubspot_owner_id: a.ownerId,
+  }
+  // Erinnerung (Push zur Fälligkeit); nur setzen, wenn angefragt.
+  if (a.reminderMs != null) p.hs_task_reminders = String(a.reminderMs)
+  return p
 }
 
 /**
@@ -163,15 +181,7 @@ export async function erstelleAufgabe(a: AufgabeEingabe): Promise<AufgabeErgebni
     const res = await hsFetch("/crm/v3/objects/tasks", {
       method: "POST",
       body: JSON.stringify({
-        properties: {
-          hs_task_subject: a.subject,
-          hs_task_body: a.body,
-          hs_task_status: "NOT_STARTED",
-          hs_task_type: a.type || "CALL",
-          hs_task_priority: a.priority,
-          hs_timestamp: String(a.timestampMs),
-          hubspot_owner_id: a.ownerId,
-        },
+        properties: aufgabeProperties(a),
         associations: [
           {
             to: { id: a.contactId },
