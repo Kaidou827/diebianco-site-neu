@@ -131,7 +131,9 @@ export async function runDigest(opts: JobOptionen): Promise<JobErgebnis> {
 
   let gesendet = 0
   const fehlerAnzahl = { n: 0 }
-  if (!opts.dryRun) {
+  if (opts.dryRun) {
+    gesendet = 1 // würde genau eine Digest-Mail senden
+  } else {
     try {
       const ok = await sendeMail({ to: salonEmail, inhalt: digestMail({ datum, zeilen: mailZeilen }) })
       gesendet = ok ? 1 : 0
