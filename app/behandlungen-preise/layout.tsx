@@ -26,11 +26,47 @@ const jsonLd = {
       '@type': 'Offer',
       'itemOffered': {
         '@type': 'Service',
-        'name': 'Balayage / Foliensträhnen',
+        'name': 'Balayage',
       },
       'priceSpecification': {
         '@type': 'PriceSpecification',
-        'price': '250.00',
+        'price': '300.00',
+        'priceCurrency': 'EUR',
+      },
+    },
+    {
+      '@type': 'Offer',
+      'itemOffered': {
+        '@type': 'Service',
+        'name': 'Strähnen',
+      },
+      'priceSpecification': {
+        '@type': 'PriceSpecification',
+        'price': '150.00',
+        'priceCurrency': 'EUR',
+      },
+    },
+    {
+      '@type': 'Offer',
+      'itemOffered': {
+        '@type': 'Service',
+        'name': 'Grey Blending',
+      },
+      'priceSpecification': {
+        '@type': 'PriceSpecification',
+        'price': '390.00',
+        'priceCurrency': 'EUR',
+      },
+    },
+    {
+      '@type': 'Offer',
+      'itemOffered': {
+        '@type': 'Service',
+        'name': 'Keratin Behandlung',
+      },
+      'priceSpecification': {
+        '@type': 'PriceSpecification',
+        'price': '300.00',
         'priceCurrency': 'EUR',
       },
     },

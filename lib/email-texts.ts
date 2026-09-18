@@ -123,10 +123,10 @@ export interface BestaetigungDaten {
 const PREIS_ZEILEN = [
   "Damenschnitt ab 80 €",
   "Ansatzfarbe ab 65 €",
-  "Strähnen ab 100 €",
-  "Balayage ab 180 €",
+  "Strähnen ab 150 €",
+  "Balayage ab 300 €",
   "Keratin ab 300 €",
-  "Grey Blending nach persönlicher Einschätzung",
+  "Grey Blending ab 390 €",
 ]
 
 export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {

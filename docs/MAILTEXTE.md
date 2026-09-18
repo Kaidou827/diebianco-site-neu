@@ -35,10 +35,10 @@ Dein Wunschzeitraum: {Zeitraum}.        (nur wenn ein Zeitraum gewählt wurde)
 Zur Orientierung (ab-Preise):            (nur wenn MAIL_PREISE_ANZEIGEN = true)
 – Damenschnitt ab 80 €
 – Ansatzfarbe ab 65 €
-– Strähnen ab 100 €
-– Balayage ab 180 €
+– Strähnen ab 150 €
+– Balayage ab 300 €
 – Keratin ab 300 €
-– Grey Blending nach persönlicher Einschätzung
+– Grey Blending ab 390 €
 
 So findest du uns:
 Siedlung Egelsberg 1, 47802 Krefeld

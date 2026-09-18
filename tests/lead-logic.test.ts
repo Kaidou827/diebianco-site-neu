@@ -25,10 +25,10 @@ test("Lead-Wert-Proxy aus Behandlung", () => {
   const erwartet: Record<string, number> = {
     schnitt_styling: 60,
     farbe_ansatz: 80,
-    straehnen_blondierung: 100,
-    balayage: 150,
-    grey_blending: 150,
-    keratin: 200,
+    straehnen_blondierung: 150,
+    balayage: 300,
+    grey_blending: 390,
+    keratin: 300,
     beratungsgespraech: 60,
     weiss_ich_noch_nicht: 60,
   }

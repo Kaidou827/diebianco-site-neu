@@ -52,7 +52,7 @@ export default function BehandlungenPreise() {
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Waschen / Föhnen (ohne Schnitt)</p>
-                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 35,00 €</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 45,00 €</p>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Herren – Master Stylist</p>
@@ -85,11 +85,15 @@ export default function BehandlungenPreise() {
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Balayage Komplett</p>
-                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 180,00 €</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 300,00 €</p>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Strähnen</p>
-                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 100,00 €</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 150,00 €</p>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
+                  <p className="text-gray-800 text-sm md:text-base">Grey Blending</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 390,00 €</p>
                 </div>
                 <div className="mt-3 md:mt-4">
                   <p className="text-gray-800 text-sm md:text-base mb-2">Freihandtechniken:</p>
@@ -128,6 +132,10 @@ export default function BehandlungenPreise() {
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Rescue System</p>
                   <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 35,00 €</p>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
+                  <p className="text-gray-800 text-sm md:text-base">Bonding</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">45,00 €</p>
                 </div>
               </div>
             </div>
@@ -219,7 +227,7 @@ export default function BehandlungenPreise() {
             </div>
 
             {/* MAKE UP */}
-            <div>
+            <div className="mb-12">
               <h2 className="font-serif text-xl md:text-2xl lg:text-3xl text-[#2C2C2C] mb-4 md:mb-6 pb-2 border-b border-gray-200">
                 MAKE UP
               </h2>
@@ -227,6 +235,27 @@ export default function BehandlungenPreise() {
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Touch Over (Make-Up-Finish)</p>
                   <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 80€</p>
+                </div>
+              </div>
+            </div>
+
+            {/* AUGENBRAUEN & WIMPERN */}
+            <div>
+              <h2 className="font-serif text-xl md:text-2xl lg:text-3xl text-[#2C2C2C] mb-4 md:mb-6 pb-2 border-b border-gray-200">
+                AUGENBRAUEN & WIMPERN
+              </h2>
+              <div className="space-y-3 md:space-y-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
+                  <p className="text-gray-800 text-sm md:text-base">Augenbrauen färben</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">20,00 €</p>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
+                  <p className="text-gray-800 text-sm md:text-base">Augenbrauen in Form zupfen</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">20,00 €</p>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
+                  <p className="text-gray-800 text-sm md:text-base">Wimpern färben</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">25,00 €</p>
                 </div>
               </div>
             </div>

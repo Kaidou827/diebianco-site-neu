@@ -74,8 +74,9 @@ Detailfragen als **Welle 2** – je Antwort ein PATCH auf die Kontakt-ID.
 **Priorität** — `hoch`: Grey Blending, Balayage, Keratin, Strähnen/Blondierung ·
 `mittel`: Farbe/Ansatz, Beratungsgespräch · `niedrig`: Schnitt & Styling, Weiß ich noch nicht.
 
-**Lead-Wert (€, grob)** — Schnitt 60 · Farbe/Ansatz 80 · Strähnen 100 ·
-Balayage 150 · Grey Blending 150 · Keratin 200 · Beratung 60 · Unklar 60.
+**Lead-Wert (€, grob)** — Schnitt 60 · Farbe/Ansatz 80 · Strähnen 150 ·
+Balayage 300 · Grey Blending 390 · Keratin 300 · Beratung 60 · Unklar 60.
+Orientiert sich an den ab-Preisen aus `/behandlungen-preise`.
 
 **Lead-Qualität** — `heiss`, wenn Priorität `hoch` **und** ein Wunschzeitraum
 ≠ „egal" gesetzt ist; sonst `warm`. `kalt` wird **nur manuell** im CRM vergeben.
