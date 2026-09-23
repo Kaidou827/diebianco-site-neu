@@ -110,12 +110,6 @@ export default function Navigation() {
                 Empfehlung
               </Link>
               <Link
-                href="/ergebnisse"
-                className="px-3 py-2 text-sm font-medium transition-colors text-white hover:text-white/80"
-              >
-                Ergebnisse
-              </Link>
-              <Link
                 href="/Blog"
                 className="px-3 py-2 text-sm font-medium transition-colors text-white hover:text-white/80"
               >
@@ -289,13 +283,6 @@ export default function Navigation() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 <span className="text-lg">Blog</span>
-              </Link>
-              <Link
-                href="/ergebnisse"
-                className="flex items-center h-14 px-4 text-white hover:bg-white/10 rounded-lg mb-1 transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <span className="text-lg">Ergebnisse</span>
               </Link>
 
               {/* Leistungen Accordion */}
