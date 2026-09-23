@@ -167,7 +167,6 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
     "Mo–Fr 9–17 Uhr · Sa 7–14 Uhr · nur mit Termin",
     `Telefon: ${salonTelefon}`,
     "",
-    `Unsere Ergebnisse: ${SITE}/ergebnisse`,
     `Behandlungen & Preise: ${SITE}/behandlungen-preise`,
     "",
     "Du musst jetzt nichts weiter tun – Teresa meldet sich persönlich bei dir.",
@@ -199,7 +198,6 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
   <p style="margin:0 0 16px">Telefon: <a href="${esc(salonTelefonHref)}" style="color:#B8863D">${esc(salonTelefon)}</a></p>
 
   <p style="margin:0 0 20px">
-    <a href="${esc(SITE)}/ergebnisse" style="color:#B8863D;margin-right:16px">Unsere Ergebnisse ansehen</a>
     <a href="${esc(SITE)}/behandlungen-preise" style="color:#B8863D">Behandlungen &amp; Preise</a>
   </p>
 
