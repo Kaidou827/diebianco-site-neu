@@ -29,19 +29,16 @@ import {
   naechsteNichtErreichtStufe,
   parseHubspotMs,
   parseZahl,
+  sollArchivieren,
   sollReaktivieren,
-  sollReviewMail,
   sortiereDigest,
   tageSeit,
-  terminAktionen,
+  terminStatusAufgabeFaellig,
 } from "@/lib/cron/logik"
 import {
   digestMail,
   nichtErreichtMail,
   reaktivierungMail,
-  reviewMail,
-  terminBestaetigungMail,
-  terminErinnerungMail,
   type DigestMailZeile,
 } from "@/lib/email-texts"
 import { sendeMail, MAIL_REPLYTO } from "@/lib/mailer"
@@ -51,12 +48,6 @@ import { erstelleAbmeldeToken } from "@/lib/abmelde-token"
 const OWNER_ID = process.env.HUBSPOT_DEFAULT_OWNER_ID || "81184186"
 const SITE = process.env.SITE_URL || "https://www.diebianco.de"
 const MEETINGS_LINK = process.env.MEETINGS_LINK_RUECKRUF || ""
-const REVIEW_AKTIV = process.env.REVIEW_MAIL_ENABLED === "true"
-const GOOGLE_REVIEW_URL = process.env.GOOGLE_REVIEW_URL || ""
-// Terminbestätigung/-erinnerung (Job 3a/3b): standardmäßig AUS, da StudioLution
-// die Termin-Erinnerung rund um den Termin selbst verschickt. Status-Aufgabe (3c)
-// und Bewertungsbitte (3d) laufen davon unabhängig.
-const TERMIN_MAILS_AKTIV = process.env.TERMIN_MAILS_ENABLED === "true"
 
 export interface JobOptionen {
   dryRun: boolean
@@ -247,12 +238,14 @@ export async function runNichtErreicht(opts: JobOptionen): Promise<JobErgebnis> 
   return erg
 }
 
-// ── Job 3: Termine (Bestätigung / Erinnerung / Status-Aufgabe / Bewertung) ──
+// ── Job 3: Termine – Status-Aufgabe nach dem Termin ─────────────────────────
+// Terminbestätigung/-erinnerung verschickt Teresa selbst per WhatsApp
+// (Link steht in der Rückruf-Aufgabe). Hier bleibt genau EINE Funktion:
+// 2 Tage nach dem Termin ohne Statuswechsel → Aufgabe „Status setzen".
 export async function runTermine(opts: JobOptionen): Promise<JobErgebnis> {
   const now = opts.now ?? new Date()
   const erg = leer("termine", opts.dryRun)
 
-  // 3a–c: offene Termine
   const offene = await sucheKontakteAlle({
     filterGroups: [
       {
@@ -262,124 +255,78 @@ export async function runTermine(opts: JobOptionen): Promise<JobErgebnis> {
         ],
       },
     ],
-    properties: [
-      "firstname", "email", "wunsch_behandlung", "termin_datum", "lead_status_intern",
-      "termin_bestaetigung_gesendet", "termin_erinnerung_gesendet", "termin_status_aufgabe_gesendet",
-    ],
+    properties: ["firstname", "termin_datum", "lead_status_intern", "termin_status_aufgabe_gesendet"],
   })
 
   for (const z of offene) {
     erg.geprueft++
-    const terminMs = parseHubspotMs(prop(z, "termin_datum"))
-    const akt = terminAktionen({
+    const faellig = terminStatusAufgabeFaellig({
       status: prop(z, "lead_status_intern"),
-      terminMs,
-      bestaetigungGesendet: Boolean(prop(z, "termin_bestaetigung_gesendet")),
-      erinnerungGesendet: Boolean(prop(z, "termin_erinnerung_gesendet")),
+      terminMs: parseHubspotMs(prop(z, "termin_datum")),
+      aufgabeGesendet: Boolean(prop(z, "termin_status_aufgabe_gesendet")),
       nowMs: now.getTime(),
     })
-    const aufgabeGesendet = Boolean(prop(z, "termin_status_aufgabe_gesendet"))
-    const email = prop(z, "email")
-    // Mails nur mit E-Mail-Adresse UND wenn der Schalter an ist; die Status-Aufgabe geht immer.
-    const bestaetigen = akt.bestaetigen && Boolean(email) && TERMIN_MAILS_AKTIV
-    const erinnern = akt.erinnern && Boolean(email) && TERMIN_MAILS_AKTIV
-    if (!bestaetigen && !erinnern && !(akt.aufgabe && !aufgabeGesendet)) {
-      erg.uebersprungen++
-      continue
-    }
+    if (!faellig) { erg.uebersprungen++; continue }
+    if (opts.dryRun) { erg.gesendet++; continue }
     try {
       const firstname = prop(z, "firstname")
-      const behandlung = prop(z, "wunsch_behandlung")
-      if (bestaetigen) {
-        if (!opts.dryRun) {
-          await sendeMail({
-            to: email,
-            replyTo: MAIL_REPLYTO,
-            inhalt: terminBestaetigungMail({ firstname, behandlung, terminMs: terminMs as number, abmeldeUrl: abmeldeUrl(z.id) }),
-          })
-          await aktualisiereKontakt(z.id, { termin_bestaetigung_gesendet: String(now.getTime()) })
-        }
-        erg.gesendet++
-      }
-      if (erinnern) {
-        if (!opts.dryRun) {
-          await sendeMail({
-            to: email,
-            replyTo: MAIL_REPLYTO,
-            inhalt: terminErinnerungMail({ firstname, behandlung, terminMs: terminMs as number, abmeldeUrl: abmeldeUrl(z.id) }),
-          })
-          await aktualisiereKontakt(z.id, { termin_erinnerung_gesendet: String(now.getTime()) })
-        }
-        erg.gesendet++
-      }
-      if (akt.aufgabe && !aufgabeGesendet) {
-        if (!opts.dryRun) {
-          await erstelleAufgabe({
-            contactId: z.id,
-            subject: `Status setzen: erschienen / nicht erschienen – ${firstname || "Kundin"}`,
-            body: `Termin liegt ≥ 2 Tage zurück und der Status ist noch „termin_vereinbart".\nBitte auf erschienen / nicht_erschienen setzen.\n${kontaktDeepLink(z.id)}`,
-            timestampMs: berlinHeuteUmMs(17, 0, now),
-            priority: "MEDIUM",
-            ownerId: OWNER_ID,
-            type: "TODO",
-          })
-          await aktualisiereKontakt(z.id, { termin_status_aufgabe_gesendet: String(now.getTime()) })
-        }
-        erg.gesendet++
-      }
+      await erstelleAufgabe({
+        contactId: z.id,
+        subject: `Status setzen: erschienen / nicht erschienen für ${firstname || "Kundin"}`,
+        body: `Termin liegt ≥ 2 Tage zurück und der Status ist noch „termin_vereinbart".\nBitte auf erschienen / nicht_erschienen setzen.\n${kontaktDeepLink(z.id)}`,
+        timestampMs: berlinHeuteUmMs(17, 0, now),
+        priority: "MEDIUM",
+        ownerId: OWNER_ID,
+        type: "TODO",
+      })
+      await aktualisiereKontakt(z.id, { termin_status_aufgabe_gesendet: String(now.getTime()) })
+      erg.gesendet++
     } catch (err) {
       console.error(`[termine] Kontakt ${z.id} fehlgeschlagen:`, err)
       erg.fehler++
     }
   }
 
-  // 3d: Bewertungsbitte (optional)
-  if (REVIEW_AKTIV) {
-    if (!GOOGLE_REVIEW_URL) {
-      console.warn("[termine] REVIEW_MAIL_ENABLED=true, aber GOOGLE_REVIEW_URL fehlt – Bewertungsmails übersprungen.")
-    } else {
-      const erschienen = await sucheKontakteAlle({
-        filterGroups: [
-          {
-            filters: [
-              { propertyName: "lead_status_intern", operator: "EQ", value: "erschienen" },
-              { propertyName: "einwilligung_marketing", operator: "EQ", value: "true" },
-              { propertyName: "termin_datum", operator: "HAS_PROPERTY" },
-              { propertyName: "review_mail_gesendet", operator: "NOT_HAS_PROPERTY" },
-              { propertyName: "email", operator: "HAS_PROPERTY" },
-            ],
-          },
+  console.log(`[termine] geprüft=${erg.geprueft} aufgaben=${erg.gesendet} übersprungen=${erg.uebersprungen} fehler=${erg.fehler} dry=${opts.dryRun}`)
+  return erg
+}
+
+// ── Job 5: Archivierung alter „kein Interesse"-Kontakte (wöchentlich) ────────
+export async function runArchivierung(opts: JobOptionen): Promise<JobErgebnis> {
+  const now = opts.now ?? new Date()
+  const cutoff = now.getTime() - 90 * 24 * 60 * 60 * 1000
+  const zeilen = await sucheKontakteAlle({
+    filterGroups: [
+      {
+        filters: [
+          { propertyName: "lead_status_intern", operator: "EQ", value: "kein_interesse" },
+          { propertyName: "hs_lastmodifieddate", operator: "LTE", value: String(cutoff) },
         ],
-        properties: ["firstname", "email", "termin_datum", "review_mail_gesendet", "einwilligung_marketing", "lead_status_intern"],
-      })
-      for (const z of erschienen) {
-        erg.geprueft++
-        const ok = sollReviewMail({
-          status: prop(z, "lead_status_intern"),
-          terminMs: parseHubspotMs(prop(z, "termin_datum")),
-          reviewGesendet: Boolean(prop(z, "review_mail_gesendet")),
-          einwilligung: prop(z, "einwilligung_marketing") === "true",
-          nowMs: now.getTime(),
-        })
-        if (!ok) { erg.uebersprungen++; continue }
-        if (opts.dryRun) { erg.gesendet++; continue }
-        try {
-          await sendeMail({
-            to: prop(z, "email"),
-            replyTo: MAIL_REPLYTO,
-            inhalt: reviewMail({ firstname: prop(z, "firstname"), googleReviewUrl: GOOGLE_REVIEW_URL, abmeldeUrl: abmeldeUrl(z.id) }),
-          })
-          await aktualisiereKontakt(z.id, { review_mail_gesendet: String(now.getTime()) })
-          erg.gesendet++
-        } catch (err) {
-          console.error(`[termine/review] Kontakt ${z.id} fehlgeschlagen:`, err)
-          erg.fehler++
-        }
-      }
+      },
+    ],
+    properties: ["firstname", "lead_status_intern", "hs_lastmodifieddate"],
+  })
+
+  const erg = leer("archiv", opts.dryRun)
+  for (const z of zeilen) {
+    erg.geprueft++
+    const ok = sollArchivieren({
+      status: prop(z, "lead_status_intern"),
+      lastmodMs: parseHubspotMs(prop(z, "hs_lastmodifieddate")),
+      nowMs: now.getTime(),
+    })
+    if (!ok) { erg.uebersprungen++; continue }
+    if (opts.dryRun) { erg.gesendet++; continue }
+    try {
+      await aktualisiereKontakt(z.id, { lead_status_intern: "archiv" })
+      erg.gesendet++
+    } catch (err) {
+      console.error(`[archiv] Kontakt ${z.id} fehlgeschlagen:`, err)
+      erg.fehler++
     }
   }
-
-  console.log(`[termine] geprüft=${erg.geprueft} gesendet=${erg.gesendet} übersprungen=${erg.uebersprungen} fehler=${erg.fehler} dry=${opts.dryRun}`)
+  // „gesendet" = geänderte Kontakte (auf archiv gesetzt).
+  console.log(`[archiv] geprüft=${erg.geprueft} geändert=${erg.gesendet} übersprungen=${erg.uebersprungen} fehler=${erg.fehler} dry=${opts.dryRun}`)
   return erg
 }
 
@@ -440,7 +387,7 @@ export async function runReaktivierung(opts: JobOptionen): Promise<JobErgebnis> 
 // ── Orchestrator ─────────────────────────────────────────────────────────────
 export async function runAlle(opts: JobOptionen): Promise<JobErgebnis[]> {
   const ergebnisse: JobErgebnis[] = []
-  for (const job of [runDigest, runNichtErreicht, runTermine, runReaktivierung]) {
+  for (const job of [runDigest, runNichtErreicht, runTermine, runReaktivierung, runArchivierung]) {
     try {
       ergebnisse.push(await job(opts))
     } catch (err) {
