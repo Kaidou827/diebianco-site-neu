@@ -13,7 +13,8 @@
  */
 
 import { salonTelefon, salonTelefonHref, salonEmail, salonAdresse } from "@/lib/site-info"
-import { behandlungLabel, behandlungsDauer, zeitraumLabel } from "@/lib/lead-logic"
+import { behandlungLabel, zeitraumLabel } from "@/lib/lead-logic"
+import { waSalonFrageLink } from "@/lib/whatsapp"
 
 const SITE = process.env.SITE_URL || "https://www.diebianco.de"
 const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -36,6 +37,20 @@ export interface EmailInhalt {
   subject: string
   text: string
   html: string
+}
+
+// ── Standard-Klausel Preise (wiederverwendbar in allen Kundinnen-Mails) ──────
+const PREIS_KLAUSEL_TEXT =
+  "Hinweis zu unseren Preisen: Alle genannten Preise sind ab-Preise und dienen der Orientierung. " +
+  "Der tatsächliche Preis richtet sich nach Zustand, Länge und Struktur deiner Haare sowie dem Aufwand " +
+  "der Behandlung und wird entsprechend angepasst. Teresa bespricht den Preis vor Beginn der Behandlung mit dir."
+
+/** Preis-Klausel als eigener, klar abgesetzter Block (kleinere Schrift, grau). */
+export function preisKlausel(): { text: string; html: string } {
+  return {
+    text: `— — —\n${PREIS_KLAUSEL_TEXT}`,
+    html: `<p style="margin:20px 0 0;padding-top:12px;border-top:1px solid #E7DFD0;color:#8a7d6a;font-size:12px;line-height:1.5">${esc(PREIS_KLAUSEL_TEXT)}</p>`,
+  }
 }
 
 // ── Salon-Benachrichtigung (Team) ───────────────────────────────────────────
@@ -149,6 +164,8 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
     : ""
 
   const adresse = `${salonAdresse.strasse}, ${salonAdresse.ort}`
+  const waFrage = waSalonFrageLink(hatBehandlung ? behandlung : undefined)
+  const klausel = preisKlausel()
 
   // ── Text-Alternative ──
   const text = [
@@ -156,9 +173,12 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
     "",
     `vielen Dank – ${dankeSatz}`,
     meldeSatz,
+    "",
+    "Du hast es eilig oder eine kurze Frage? Am schnellsten erreichst du uns per WhatsApp:",
+    waFrage,
     ...(zeitraumSatz ? ["", zeitraumSatz] : []),
     ...(PREISE_ANZEIGEN
-      ? ["", "Zur Orientierung (ab-Preise):", ...PREIS_ZEILEN.map((z) => `– ${z}`)]
+      ? ["", "Zur Orientierung – unsere ab-Preise:", ...PREIS_ZEILEN.map((z) => `– ${z}`), "Alle Angaben sind ab-Preise."]
       : []),
     "",
     "So findest du uns:",
@@ -174,6 +194,8 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
     "Bis bald & liebe Grüße",
     "Dein Team von DIE BIANCO",
     "",
+    klausel.text,
+    "",
     `Impressum: ${SITE}/impressum · Datenschutz: ${SITE}/datenschutz`,
   ].join("\n")
 
@@ -183,12 +205,14 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
   <p style="font-size:18px;margin:0 0 12px">Hallo ${esc(vorname)},</p>
   <p style="margin:0 0 12px">vielen Dank – ${esc(dankeSatz)}</p>
   <p style="margin:0 0 12px">${esc(meldeSatz)}</p>
+  <p style="margin:0 0 12px">Du hast es eilig oder eine kurze Frage? Am schnellsten erreichst du uns per WhatsApp: <a href="${esc(waFrage)}" style="color:#B8863D;font-weight:600">Schreib uns auf WhatsApp</a></p>
   ${zeitraumSatz ? `<p style="margin:0 0 12px;background:#F5F1E8;border-radius:10px;padding:12px 16px">${esc(zeitraumSatz)}</p>` : ""}
 
-  ${PREISE_ANZEIGEN ? `<p style="margin:20px 0 6px;font-weight:700">Zur Orientierung (ab-Preise)</p>
-  <ul style="margin:0 0 16px;padding-left:20px">
+  ${PREISE_ANZEIGEN ? `<p style="margin:20px 0 6px;font-weight:700">Zur Orientierung – unsere ab-Preise</p>
+  <ul style="margin:0 0 4px;padding-left:20px">
     ${PREIS_ZEILEN.map((z) => `<li>${esc(z)}</li>`).join("")}
-  </ul>` : ""}
+  </ul>
+  <p style="margin:0 0 16px;color:#8a7d6a;font-size:13px">Alle Angaben sind ab-Preise.</p>` : ""}
 
   <p style="margin:20px 0 6px;font-weight:700">So findest du uns</p>
   <p style="margin:0 0 4px">
@@ -205,6 +229,8 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
 
   <p style="margin:0 0 4px">Bis bald &amp; liebe Grüße</p>
   <p style="margin:0 0 20px;font-weight:600">Dein Team von DIE BIANCO</p>
+
+  ${klausel.html}
 
   <hr style="border:none;border-top:1px solid #E7DFD0;margin:16px 0">
   <p style="margin:0;color:#8a7d6a;font-size:12px">
@@ -248,17 +274,6 @@ function footerHtml(abmeldeUrl?: string): string {
     DIE BIANCO · ${esc(ADRESSE)} · <a href="${esc(salonTelefonHref)}" style="color:#8a7d6a">${esc(salonTelefon)}</a> · <a href="mailto:${esc(salonEmail)}" style="color:#8a7d6a">${esc(salonEmail)}</a><br>
     <a href="${esc(SITE)}/impressum" style="color:#8a7d6a">Impressum</a> · <a href="${esc(SITE)}/datenschutz" style="color:#8a7d6a">Datenschutz</a>${abmeldeUrl ? ` · <a href="${esc(abmeldeUrl)}" style="color:#8a7d6a">Keine E-Mails mehr</a>` : ""}
   </p>`
-}
-
-function terminFormat(ms: number): string {
-  const d = new Date(ms)
-  const datum = new Intl.DateTimeFormat("de-DE", {
-    timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long", year: "numeric",
-  }).format(d)
-  const zeit = new Intl.DateTimeFormat("de-DE", {
-    timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit",
-  }).format(d)
-  return `${datum} um ${zeit} Uhr`
 }
 
 // ── 1) Digest (intern an den Salon, kein Abmeldelink) ───────────────────────
@@ -343,6 +358,7 @@ export function nichtErreichtMail(d: NichtErreichtMailDaten): EmailInhalt {
       "",
       "Liebe Grüße",
       "Dein Team von DIE BIANCO",
+      preisKlausel().text,
       footerText(d.abmeldeUrl),
     ].join("\n")
     const html = huelle(`
@@ -352,6 +368,7 @@ export function nichtErreichtMail(d: NichtErreichtMailDaten): EmailInhalt {
       ${rueckrufHtml}
       <p style="margin:0 0 4px">Liebe Grüße</p>
       <p style="margin:0 0 8px;font-weight:600">Dein Team von DIE BIANCO</p>
+      ${preisKlausel().html}
       ${footerHtml(d.abmeldeUrl)}`)
     return { subject: "Kurze Erinnerung – wir sind für dich da", text, html }
   }
@@ -366,6 +383,7 @@ export function nichtErreichtMail(d: NichtErreichtMailDaten): EmailInhalt {
     "",
     "Bis bald & liebe Grüße",
     "Dein Team von DIE BIANCO",
+    preisKlausel().text,
     footerText(d.abmeldeUrl),
   ].join("\n")
   const html = huelle(`
@@ -376,87 +394,9 @@ export function nichtErreichtMail(d: NichtErreichtMailDaten): EmailInhalt {
     ${rueckrufHtml}
     <p style="margin:0 0 4px">Bis bald &amp; liebe Grüße</p>
     <p style="margin:0 0 8px;font-weight:600">Dein Team von DIE BIANCO</p>
+    ${preisKlausel().html}
     ${footerHtml(d.abmeldeUrl)}`)
   return { subject: "Wir haben versucht, dich zu erreichen", text, html }
-}
-
-// ── 3a) Terminbestätigung (Kundin) ──────────────────────────────────────────
-export interface TerminMailDaten {
-  firstname: string
-  behandlung: string
-  terminMs: number
-  abmeldeUrl?: string
-}
-
-export function terminBestaetigungMail(d: TerminMailDaten): EmailInhalt {
-  const vorname = d.firstname || "du"
-  const wann = terminFormat(d.terminMs)
-  const dauer = behandlungsDauer(d.behandlung)
-  const behandlung = behandlungLabel(d.behandlung)
-
-  const text = [
-    `Hallo ${vorname},`,
-    "",
-    `dein Termin bei DIE BIANCO ist bestätigt:`,
-    `${wann}`,
-    d.behandlung && d.behandlung !== "weiss_ich_noch_nicht" ? `Behandlung: ${behandlung}` : "",
-    dauer ? `Plane bitte ${dauer} ein.` : "",
-    "",
-    `Adresse: ${ADRESSE}`,
-    `Karte: ${MAPS_URL}`,
-    "",
-    "Bitte sag uns mindestens 24 Stunden vorher Bescheid, falls du den Termin nicht wahrnehmen kannst.",
-    "",
-    "Wir freuen uns auf dich!",
-    "Dein Team von DIE BIANCO",
-    footerText(d.abmeldeUrl),
-  ]
-    .filter((l) => l !== "")
-    .join("\n")
-
-  const html = huelle(`
-    <p style="font-size:18px;margin:0 0 12px">Hallo ${esc(vorname)},</p>
-    <p style="margin:0 0 8px">dein Termin bei DIE BIANCO ist bestätigt:</p>
-    <p style="margin:0 0 12px;background:#F5F1E8;border-radius:10px;padding:12px 16px;font-size:17px"><strong>${esc(wann)}</strong>${d.behandlung && d.behandlung !== "weiss_ich_noch_nicht" ? `<br>${esc(behandlung)}` : ""}${dauer ? `<br><span style="color:#8a7d6a">Bitte plane ${esc(dauer)} ein.</span>` : ""}</p>
-    <p style="margin:0 0 12px">Adresse: <a href="${esc(MAPS_URL)}" style="color:#B8863D">${esc(ADRESSE)}</a></p>
-    <p style="margin:0 0 12px">Bitte sag uns <strong>mindestens 24 Stunden vorher</strong> Bescheid, falls du den Termin nicht wahrnehmen kannst.</p>
-    <p style="margin:0 0 4px">Wir freuen uns auf dich!</p>
-    <p style="margin:0 0 8px;font-weight:600">Dein Team von DIE BIANCO</p>
-    ${footerHtml(d.abmeldeUrl)}`)
-  return { subject: "Dein Termin bei DIE BIANCO ist bestätigt", text, html }
-}
-
-// ── 3b) Terminerinnerung (Kundin) ───────────────────────────────────────────
-export function terminErinnerungMail(d: TerminMailDaten): EmailInhalt {
-  const vorname = d.firstname || "du"
-  const wann = terminFormat(d.terminMs)
-
-  const text = [
-    `Hallo ${vorname},`,
-    "",
-    `kleine Erinnerung an deinen Termin bei DIE BIANCO:`,
-    `${wann}`,
-    "",
-    `Adresse: ${ADRESSE}`,
-    `Karte: ${MAPS_URL}`,
-    "",
-    "Falls es doch nicht passt, sag uns bitte mindestens 24 Stunden vorher Bescheid.",
-    "",
-    "Bis gleich & liebe Grüße",
-    "Dein Team von DIE BIANCO",
-    footerText(d.abmeldeUrl),
-  ].join("\n")
-
-  const html = huelle(`
-    <p style="font-size:18px;margin:0 0 12px">Hallo ${esc(vorname)},</p>
-    <p style="margin:0 0 8px">kleine Erinnerung an deinen Termin bei DIE BIANCO:</p>
-    <p style="margin:0 0 12px;background:#F5F1E8;border-radius:10px;padding:12px 16px;font-size:17px"><strong>${esc(wann)}</strong></p>
-    <p style="margin:0 0 12px">Adresse: <a href="${esc(MAPS_URL)}" style="color:#B8863D">${esc(ADRESSE)}</a></p>
-    <p style="margin:0 0 12px">Falls es doch nicht passt, sag uns bitte <strong>mindestens 24 Stunden vorher</strong> Bescheid.</p>
-    <p style="margin:0 0 4px">Bis gleich &amp; liebe Grüße</p>
-    <p style="margin:0 0 8px;font-weight:600">Dein Team von DIE BIANCO</p>
-    ${footerHtml(d.abmeldeUrl)}`)
-  return { subject: "Erinnerung an deinen Termin bei DIE BIANCO", text, html }
 }
 
 // ── 4) Reaktivierung (Kundin, Marketing) ────────────────────────────────────
@@ -481,6 +421,7 @@ export function reaktivierungMail(d: ReaktivierungMailDaten): EmailInhalt {
     "",
     "Liebe Grüße",
     "Dein Team von DIE BIANCO",
+    preisKlausel().text,
     footerText(d.abmeldeUrl),
   ].join("\n")
 
@@ -491,40 +432,9 @@ export function reaktivierungMail(d: ReaktivierungMailDaten): EmailInhalt {
     <p style="margin:0 0 12px">Melde dich einfach, wenn es passt: <a href="${esc(salonTelefonHref)}" style="color:#B8863D">${esc(salonTelefon)}</a>.</p>
     <p style="margin:0 0 4px">Liebe Grüße</p>
     <p style="margin:0 0 8px;font-weight:600">Dein Team von DIE BIANCO</p>
+    ${preisKlausel().html}
     ${footerHtml(d.abmeldeUrl)}`)
   return { subject: "Dein Wunschtermin ist noch offen", text, html }
-}
-
-// ── 3d) Bewertungsbitte (Kundin, Marketing) ─────────────────────────────────
-export interface ReviewMailDaten {
-  firstname: string
-  googleReviewUrl: string
-  abmeldeUrl?: string
-}
-
-export function reviewMail(d: ReviewMailDaten): EmailInhalt {
-  const vorname = d.firstname || "du"
-  const text = [
-    `Hallo ${vorname},`,
-    "",
-    "wir hoffen, du fühlst dich mit deinem neuen Look rundum wohl!",
-    "Wenn du magst, freuen wir uns riesig über eine kurze Bewertung – das hilft anderen sehr:",
-    d.googleReviewUrl,
-    "",
-    "Danke dir & liebe Grüße",
-    "Dein Team von DIE BIANCO",
-    footerText(d.abmeldeUrl),
-  ].join("\n")
-
-  const html = huelle(`
-    <p style="font-size:18px;margin:0 0 12px">Hallo ${esc(vorname)},</p>
-    <p style="margin:0 0 12px">wir hoffen, du fühlst dich mit deinem neuen Look rundum wohl!</p>
-    <p style="margin:0 0 16px">Wenn du magst, freuen wir uns riesig über eine kurze Bewertung – das hilft anderen sehr.</p>
-    <p style="margin:0 0 16px"><a href="${esc(d.googleReviewUrl)}" style="background:#B8863D;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;display:inline-block;font-weight:700">Jetzt bei Google bewerten</a></p>
-    <p style="margin:0 0 4px">Danke dir &amp; liebe Grüße</p>
-    <p style="margin:0 0 8px;font-weight:600">Dein Team von DIE BIANCO</p>
-    ${footerHtml(d.abmeldeUrl)}`)
-  return { subject: "Wie gefällt dir dein Ergebnis?", text, html }
 }
 
 // ── Abmelde-Bestätigungsseite ───────────────────────────────────────────────
