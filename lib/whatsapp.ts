@@ -49,3 +49,28 @@ export function waTerminBestaetigungLink(opts: {
     `24 Stunden vorher Bescheid. Bis bald!`
   return waLink(digits, text)
 }
+
+// ── Bewerbungen ──────────────────────────────────────────────────────────────
+
+/** Bewerber/in schreibt den Salon an (Hero-/Footer-Link der Stellenseiten). */
+export function waBewerbungLink(stelle: "azubi" | "friseur"): string {
+  const text =
+    stelle === "azubi"
+      ? "Hallo Teresa, ich interessiere mich für die Ausbildung bei DIE BIANCO. Mein Name ist"
+      : "Hallo Teresa, ich interessiere mich für die Stelle als Friseur/in bei DIE BIANCO. Mein Name ist"
+  return waLink(SALON_WA_NUMMER, text)
+}
+
+/**
+ * Teresa antwortet der Bewerber/in (Link in der Benachrichtigungs-Mail).
+ * Leerer String, wenn keine gültige (E.164-)Telefonnummer vorliegt.
+ */
+export function waBewerbungAntwortLink(opts: { vorname: string; stelleLabel: string; phoneE164: string }): string {
+  const digits = (opts.phoneE164 || "").replace(/\D/g, "")
+  if (!(opts.phoneE164 || "").startsWith("+") || digits.length < 8) return ""
+  const vorname = opts.vorname || "..."
+  const text =
+    `Hallo ${vorname}, hier ist Teresa von DIE BIANCO. Danke für deine Bewerbung als ${opts.stelleLabel}! ` +
+    `Wann passt es dir für ein kurzes Telefonat oder ein Kennenlernen im Salon? Liebe Grüße, Teresa`
+  return waLink(digits, text)
+}

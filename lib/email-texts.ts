@@ -460,3 +460,105 @@ export function abmeldeBestaetigungSeite(ok: boolean): string {
   </div>
 </body></html>`
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Bewerbungen (Jobs-Landingpages). Getrennt vom Lead-Flow.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface BewerbungSalonDaten {
+  stelleLabel: string
+  vorname: string
+  nachname: string
+  telefonAnzeige: string
+  telHref: string
+  email: string
+  kontaktwunschLabel: string
+  antworten: Array<[string, string]>
+  waAntwortLink: string
+  quelle: string
+  eingang: string
+}
+
+/** Benachrichtigung an den Salon (Bewerbung). */
+export function bewerbungBenachrichtigung(d: BewerbungSalonDaten): EmailInhalt {
+  const name = `${d.vorname} ${d.nachname}`.trim() || d.vorname || "Unbekannt"
+  const kopf: Array<[string, string]> = [
+    ["Stelle", d.stelleLabel],
+    ["Name", name],
+    ["Telefon", d.telefonAnzeige || "—"],
+    ["Kontaktwunsch", d.kontaktwunschLabel],
+  ]
+  const rest: Array<[string, string]> = [
+    ...(d.email ? ([["E-Mail", d.email]] as Array<[string, string]>) : []),
+    ...d.antworten,
+  ]
+  const alle = [...kopf, ...rest]
+
+  const text = [
+    `✂️ Neue Bewerbung – ${d.stelleLabel}`,
+    "",
+    ...alle.map(([k, v]) => `${k}: ${v}`),
+    "",
+    ...(d.waAntwortLink ? [`Auf WhatsApp antworten: ${d.waAntwortLink}`] : []),
+    `Anrufen: ${d.telHref}`,
+    "",
+    `Quelle: ${d.quelle}`,
+    `Eingang: ${d.eingang}`,
+    "",
+    "Bewerberdaten: nur für das Bewerbungsverfahren nutzen, spätestens 6 Monate nach Abschluss löschen.",
+  ].join("\n")
+
+  const zeileHtml = (k: string, v: string, fett = false) =>
+    `<tr><td style="padding:6px 12px 6px 0;color:#8a7d6a;vertical-align:top;white-space:nowrap">${esc(k)}</td><td style="padding:6px 0;font-weight:${fett ? 700 : 600}">${esc(v)}</td></tr>`
+
+  const html = huelle(`
+    <h2 style="margin:0 0 12px">✂️ Neue Bewerbung</h2>
+    <table style="border-collapse:collapse;width:100%;font-size:15px">
+      ${kopf.map(([k, v]) => zeileHtml(k, v, true)).join("")}
+      ${rest.map(([k, v]) => zeileHtml(k, v)).join("")}
+    </table>
+    <p style="margin:20px 0 8px">
+      ${d.waAntwortLink ? `<a href="${esc(d.waAntwortLink)}" style="background:#25D366;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;display:inline-block;font-weight:700;margin-right:8px">Auf WhatsApp antworten</a>` : ""}
+      <a href="${esc(d.telHref)}" style="background:#2C2C2C;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;display:inline-block;font-weight:700">Anrufen</a>
+    </p>
+    <p style="margin:0 0 4px;color:#8a7d6a;font-size:13px">Quelle: ${esc(d.quelle)}</p>
+    <p style="margin:0 0 12px;color:#8a7d6a;font-size:13px">Eingang: ${esc(d.eingang)}</p>
+    <p style="margin:0;color:#8a7d6a;font-size:12px">Bewerberdaten: nur für das Bewerbungsverfahren nutzen, spätestens 6 Monate nach Abschluss löschen.</p>`)
+
+  return { subject: `✂️ Neue Bewerbung – ${d.stelleLabel} – ${name}`, text, html }
+}
+
+export interface BewerbungBestaetigungDaten {
+  vorname: string
+  stelleLabel: string
+  kontaktwegLabel: string // "WhatsApp" | "Telefon"
+  waSalonLink: string
+  bewerbungMail: string
+}
+
+/** Eingangsbestätigung an die Bewerber/in. */
+export function bewerbungEingangsbestaetigung(d: BewerbungBestaetigungDaten): EmailInhalt {
+  const vorname = d.vorname || "und schön, dass du da bist"
+  const text = [
+    `Hallo ${vorname},`,
+    "",
+    `danke für deine Bewerbung als ${d.stelleLabel}.`,
+    `Teresa schaut sich deine Angaben persönlich an und meldet sich innerhalb von 2 Werktagen per ${d.kontaktwegLabel} bei dir.`,
+    "",
+    `Du hast schon einen Lebenslauf oder Fotos deiner Arbeiten? Schick sie gern direkt an ${d.bewerbungMail} oder per WhatsApp: ${d.waSalonLink}`,
+    "",
+    "Bis bald,",
+    "dein Team von DIE BIANCO · Siedlung Egelsberg 1 · 47802 Krefeld",
+  ].join("\n")
+
+  const html = huelle(`
+    <p style="font-size:18px;margin:0 0 12px">Hallo ${esc(vorname)},</p>
+    <p style="margin:0 0 12px">danke für deine Bewerbung als <strong>${esc(d.stelleLabel)}</strong>.</p>
+    <p style="margin:0 0 12px">Teresa schaut sich deine Angaben persönlich an und meldet sich innerhalb von <strong>2 Werktagen</strong> per ${esc(d.kontaktwegLabel)} bei dir.</p>
+    <p style="margin:0 0 16px">Du hast schon einen Lebenslauf oder Fotos deiner Arbeiten? Schick sie gern direkt an <a href="mailto:${esc(d.bewerbungMail)}" style="color:#B8863D">${esc(d.bewerbungMail)}</a> oder per <a href="${esc(d.waSalonLink)}" style="color:#B8863D">WhatsApp</a>.</p>
+    <p style="margin:0 0 4px">Bis bald,</p>
+    <p style="margin:0;font-weight:600">dein Team von DIE BIANCO</p>
+    <p style="margin:4px 0 0;color:#8a7d6a;font-size:13px">Siedlung Egelsberg 1 · 47802 Krefeld</p>`)
+
+  return { subject: "Deine Bewerbung bei DIE BIANCO ist angekommen", text, html }
+}
