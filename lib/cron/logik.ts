@@ -7,8 +7,6 @@
  * ─────────────────────────────────────────────────────────────────────────
  */
 
-import { istErinnerungsfenster } from "@/lib/lead-logic"
-
 export const MS_STUNDE = 60 * 60 * 1000
 export const MS_TAG = 24 * MS_STUNDE
 
@@ -79,45 +77,24 @@ export function naechsteNichtErreichtStufe(e: NichtErreichtEingabe): 1 | 2 | nul
   return null
 }
 
-// ── Termine ─────────────────────────────────────────────────────────────────
-export interface TerminEingabe {
+// ── Termine: Status-Aufgabe nach dem Termin ─────────────────────────────────
+export interface StatusAufgabeEingabe {
   status: string
   terminMs: number | null
-  bestaetigungGesendet: boolean
-  erinnerungGesendet: boolean
+  aufgabeGesendet: boolean
   nowMs: number
 }
 
-export interface TerminAktionen {
-  bestaetigen: boolean
-  erinnern: boolean
-  aufgabe: boolean
-}
-
-export function terminAktionen(e: TerminEingabe): TerminAktionen {
-  const offen = e.status === "termin_vereinbart" && e.terminMs != null
-  return {
-    bestaetigen: offen && !e.bestaetigungGesendet,
-    erinnern: offen && !e.erinnerungGesendet && istErinnerungsfenster(e.terminMs as number, e.nowMs),
-    aufgabe: offen && (e.nowMs - (e.terminMs as number)) >= 2 * MS_TAG,
-  }
-}
-
-export interface ReviewEingabe {
-  status: string
-  terminMs: number | null
-  reviewGesendet: boolean
-  einwilligung: boolean
-  nowMs: number
-}
-
-/** Bewertungsbitte: erschienen, ≥2 Tage her, noch nicht gesendet, mit Einwilligung. */
-export function sollReviewMail(e: ReviewEingabe): boolean {
+/**
+ * Status-Aufgabe fällig? 2 Tage nach `termin_datum`, Status noch
+ * `termin_vereinbart`, Aufgabe noch nicht angelegt.
+ * (Terminbestätigung/-erinnerung verschickt Teresa selbst per WhatsApp.)
+ */
+export function terminStatusAufgabeFaellig(e: StatusAufgabeEingabe): boolean {
   return (
-    e.status === "erschienen" &&
+    e.status === "termin_vereinbart" &&
     e.terminMs != null &&
-    !e.reviewGesendet &&
-    e.einwilligung &&
+    !e.aufgabeGesendet &&
     e.nowMs - e.terminMs >= 2 * MS_TAG
   )
 }
@@ -141,4 +118,17 @@ export function sollReaktivieren(e: ReaktivierungEingabe): boolean {
     e.createdateMs != null &&
     e.nowMs - e.createdateMs >= 30 * MS_TAG
   )
+}
+
+// ── Archivierung (kein_interesse ≥ 90 Tage) ──────────────────────────────────
+export interface ArchivEingabe {
+  status: string
+  /** letzte Änderung = `hs_lastmodifieddate`. */
+  lastmodMs: number | null
+  nowMs: number
+}
+
+/** Auf `archiv` setzen: Status `kein_interesse` und letzte Änderung ≥ 90 Tage her. */
+export function sollArchivieren(e: ArchivEingabe): boolean {
+  return e.status === "kein_interesse" && e.lastmodMs != null && e.nowMs - e.lastmodMs >= 90 * MS_TAG
 }

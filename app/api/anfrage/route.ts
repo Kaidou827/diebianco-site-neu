@@ -20,6 +20,7 @@ import {
 } from "@/lib/hubspot"
 import { eingangsbestaetigung, salonBenachrichtigung } from "@/lib/email-texts"
 import { sendeMail, MAIL_EMPFAENGER, MAIL_REPLYTO } from "@/lib/mailer"
+import { waTerminBestaetigungLink } from "@/lib/whatsapp"
 
 /**
  * POST /api/anfrage
@@ -191,16 +192,21 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
     const prioMap: Record<string, "HIGH" | "MEDIUM" | "LOW"> = { hoch: "HIGH", mittel: "MEDIUM", niedrig: "LOW" }
     const faellig = faelligkeitTimestamp(jetzt)
 
+    // WhatsApp-Entwurf für Teresas manuelle Terminbestätigung (nur mit gültiger Nummer).
+    const waTermin = waTerminBestaetigungLink({ vorname: firstname, behandlungLabel: behandlung, phoneE164 })
+    const aufgabeBody = [
+      `Telefon: ${phoneE164 || phoneRoh}`,
+      `WhatsApp: ${wa}`,
+      `Nachricht: ${nachricht || "—"}`,
+      `Priorität: ${prioritaet}`,
+      `Eingang: ${eingangStr}`,
+    ]
+    if (waTermin) aufgabeBody.push(`Terminbestätigung per WhatsApp: ${waTermin}`)
+
     const aufgabe = await erstelleAufgabe({
       contactId,
       subject: `Rückruf: ${firstname} – ${behandlung} – Wunsch: ${zeitraum}`,
-      body: [
-        `Telefon: ${phoneE164 || phoneRoh}`,
-        `WhatsApp: ${wa}`,
-        `Nachricht: ${nachricht || "—"}`,
-        `Priorität: ${prioritaet}`,
-        `Eingang: ${eingangStr}`,
-      ].join("\n"),
+      body: aufgabeBody.join("\n"),
       timestampMs: faellig,
       // Erinnerung zur Fälligkeit → Teresa bekommt einen Push.
       reminderMs: faellig,

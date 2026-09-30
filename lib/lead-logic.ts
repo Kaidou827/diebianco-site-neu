@@ -37,6 +37,7 @@ export type LeadStatusIntern =
   | "nicht_erreicht"
   | "termin_vereinbart"
   | "kein_interesse"
+  | "spaeter"
   | "erschienen"
   | "nicht_erschienen"
   | "archiv"
@@ -250,18 +251,4 @@ export function behandlungsDauer(slug: string): string {
     beratungsgespraech: "ca. 30 Minuten",
   }
   return map[slug] ?? ""
-}
-
-/**
- * Liegt der Termin im Erinnerungsfenster (Default 20–32 h vor dem Termin)?
- * Reine Millisekunden-Differenz → unabhängig von der Sommer-/Winterzeit.
- */
-export function istErinnerungsfenster(
-  terminMs: number,
-  nowMs: number,
-  minH = 20,
-  maxH = 32,
-): boolean {
-  const diffH = (terminMs - nowMs) / (60 * 60 * 1000)
-  return diffH >= minH && diffH <= maxH
 }

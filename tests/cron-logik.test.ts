@@ -4,13 +4,13 @@ import {
   naechsteNichtErreichtStufe,
   parseHubspotMs,
   parseZahl,
+  sollArchivieren,
   sollReaktivieren,
-  sollReviewMail,
   sortiereDigest,
   tageSeit,
-  terminAktionen,
+  terminStatusAufgabeFaellig,
 } from "../lib/cron/logik"
-import { berlinHeuteUmMs, berlinMonat, berlinWochentag, istErinnerungsfenster } from "../lib/lead-logic"
+import { berlinHeuteUmMs, berlinMonat, berlinWochentag } from "../lib/lead-logic"
 
 const H = 60 * 60 * 1000
 const D = 24 * H
@@ -26,29 +26,6 @@ test("parseHubspotMs / parseZahl / tageSeit", () => {
   assert.equal(parseZahl("2"), 2)
   assert.equal(tageSeit(NOW - 3 * D, NOW), 3)
   assert.equal(tageSeit(null, NOW), 0)
-})
-
-// ── Erinnerungsfenster 20–32 h (inkl. Sommer-/Winterzeit-Umstellung) ────────
-test("Erinnerungsfenster 20–32 h", () => {
-  assert.equal(istErinnerungsfenster(NOW + 24 * H, NOW), true)
-  assert.equal(istErinnerungsfenster(NOW + 20 * H, NOW), true)
-  assert.equal(istErinnerungsfenster(NOW + 32 * H, NOW), true)
-  assert.equal(istErinnerungsfenster(NOW + 18 * H, NOW), false)
-  assert.equal(istErinnerungsfenster(NOW + 34 * H, NOW), false)
-})
-
-test("Erinnerungsfenster: Sommerzeit-Start (Wanduhr 24 h = real 23 h) → im Fenster", () => {
-  // 28.03.2026 10:00 Berlin (CET) → 29.03.2026 10:00 Berlin (CEST): real 23 h
-  const now = Date.parse("2026-03-28T09:00:00Z")
-  const termin = Date.parse("2026-03-29T08:00:00Z")
-  assert.equal(istErinnerungsfenster(termin, now), true)
-})
-
-test("Erinnerungsfenster: Winterzeit-Start (Wanduhr 24 h = real 25 h) → im Fenster", () => {
-  // 24.10.2026 10:00 Berlin (CEST) → 25.10.2026 10:00 Berlin (CET): real 25 h
-  const now = Date.parse("2026-10-24T08:00:00Z")
-  const termin = Date.parse("2026-10-25T09:00:00Z")
-  assert.equal(istErinnerungsfenster(termin, now), true)
 })
 
 // ── Nicht-erreicht Zähler-Logik ─────────────────────────────────────────────
@@ -70,40 +47,23 @@ test("naechsteNichtErreichtStufe: Stufen & Sperren", () => {
   assert.equal(naechsteNichtErreichtStufe({ ...basis, status: "neu", ankerMs: NOW - 50 * H, counter: 0 }), null)
 })
 
-// ── Termin-Aktionen ──────────────────────────────────────────────────────────
-test("terminAktionen: Bestätigung / Erinnerung / Status-Aufgabe", () => {
-  const morgen = terminAktionen({
-    status: "termin_vereinbart", terminMs: NOW + 24 * H,
-    bestaetigungGesendet: false, erinnerungGesendet: false, nowMs: NOW,
-  })
-  assert.deepEqual(morgen, { bestaetigen: true, erinnern: true, aufgabe: false })
-
-  const bestaetigt = terminAktionen({
-    status: "termin_vereinbart", terminMs: NOW + 24 * H,
-    bestaetigungGesendet: true, erinnerungGesendet: true, nowMs: NOW,
-  })
-  assert.deepEqual(bestaetigt, { bestaetigen: false, erinnern: false, aufgabe: false })
-
-  const vorbei = terminAktionen({
-    status: "termin_vereinbart", terminMs: NOW - 3 * D,
-    bestaetigungGesendet: true, erinnerungGesendet: true, nowMs: NOW,
-  })
-  assert.equal(vorbei.aufgabe, true)
-
-  const fremd = terminAktionen({
-    status: "erschienen", terminMs: NOW + 24 * H,
-    bestaetigungGesendet: false, erinnerungGesendet: false, nowMs: NOW,
-  })
-  assert.deepEqual(fremd, { bestaetigen: false, erinnern: false, aufgabe: false })
+// ── Termin-Status-Aufgabe (2 Tage nach dem Termin) ───────────────────────────
+test("terminStatusAufgabeFaellig", () => {
+  const b = { status: "termin_vereinbart", aufgabeGesendet: false, nowMs: NOW }
+  assert.equal(terminStatusAufgabeFaellig({ ...b, terminMs: NOW - 3 * D }), true)
+  assert.equal(terminStatusAufgabeFaellig({ ...b, terminMs: NOW - 1 * D }), false) // < 2 Tage
+  assert.equal(terminStatusAufgabeFaellig({ ...b, terminMs: NOW + 1 * D }), false) // in der Zukunft
+  assert.equal(terminStatusAufgabeFaellig({ ...b, terminMs: NOW - 3 * D, aufgabeGesendet: true }), false)
+  assert.equal(terminStatusAufgabeFaellig({ ...b, terminMs: NOW - 3 * D, status: "erschienen" }), false)
+  assert.equal(terminStatusAufgabeFaellig({ ...b, terminMs: null }), false)
 })
 
-// ── Bewertungsbitte ──────────────────────────────────────────────────────────
-test("sollReviewMail", () => {
-  const b = { status: "erschienen", reviewGesendet: false, einwilligung: true, nowMs: NOW }
-  assert.equal(sollReviewMail({ ...b, terminMs: NOW - 3 * D }), true)
-  assert.equal(sollReviewMail({ ...b, terminMs: NOW - 1 * D }), false)
-  assert.equal(sollReviewMail({ ...b, terminMs: NOW - 3 * D, einwilligung: false }), false)
-  assert.equal(sollReviewMail({ ...b, terminMs: NOW - 3 * D, reviewGesendet: true }), false)
+// ── Archivierung (kein_interesse ≥ 90 Tage) ──────────────────────────────────
+test("sollArchivieren", () => {
+  assert.equal(sollArchivieren({ status: "kein_interesse", lastmodMs: NOW - 91 * D, nowMs: NOW }), true)
+  assert.equal(sollArchivieren({ status: "kein_interesse", lastmodMs: NOW - 80 * D, nowMs: NOW }), false)
+  assert.equal(sollArchivieren({ status: "neu", lastmodMs: NOW - 91 * D, nowMs: NOW }), false)
+  assert.equal(sollArchivieren({ status: "kein_interesse", lastmodMs: null, nowMs: NOW }), false)
 })
 
 // ── Reaktivierung ────────────────────────────────────────────────────────────

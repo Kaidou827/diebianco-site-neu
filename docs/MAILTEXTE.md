@@ -5,14 +5,45 @@ Werte in `{geschweiften Klammern}` werden automatisch eingesetzt. Zeilen mit
 _(nur wenn …)_ erscheinen nur unter der genannten Bedingung.
 
 Absender aller Mails: **DIE BIANCO \<termine@diebianco.de\>** · Antwort an **salon@diebianco.de**.
-Jede Mail endet mit dem **Fußzeilen-Block** (siehe ganz unten) inkl. Abmeldelink.
+Jede Kunden-Mail endet mit dem **Fußzeilen-Block** (siehe ganz unten) inkl. Abmeldelink.
 
-Status der zeitgesteuerten Mails:
+**Stand 30.09.2026:**
 - Eingangsbestätigung: **aktiv** (sofort nach der Anfrage).
-- Nicht-erreicht 1 & 2: **aktiv**.
-- Terminbestätigung & -erinnerung: **derzeit AUS** (StudioLution übernimmt das; per `TERMIN_MAILS_ENABLED` aktivierbar).
-- Reaktivierung: **aktiv** (nur mit Marketing-Einwilligung).
-- Bewertungsbitte: **derzeit AUS** (per `REVIEW_MAIL_ENABLED` aktivierbar).
+- Nicht-erreicht 1 & 2: **aktiv** (nach Statuswechsel auf „nicht erreicht").
+- Reaktivierung: **aktiv** (nur mit Marketing-Einwilligung, nach ≥30 Tagen).
+- Terminbestätigung & -erinnerung: **nicht mehr automatisch** – Teresa bestätigt Termine
+  selbst per WhatsApp (Vorlage unten). Alte Texte im Abschnitt „Nicht mehr automatisch".
+- Bewertungsbitte: **entfernt** (Text im Abschnitt „Nicht mehr automatisch").
+
+---
+
+## Standard-Klausel Preise
+
+Steht am Ende **jeder** Kundinnen-Mail, die Preise nennt oder auf `/behandlungen-preise`
+verlinkt (Eingangsbestätigung, Nicht-erreicht 1 & 2, Reaktivierung) – als eigener,
+kleiner, grauer Block über der Fußzeile:
+
+> Hinweis zu unseren Preisen: Alle genannten Preise sind ab-Preise und dienen der
+> Orientierung. Der tatsächliche Preis richtet sich nach Zustand, Länge und Struktur
+> deiner Haare sowie dem Aufwand der Behandlung und wird entsprechend angepasst.
+> Teresa bespricht den Preis vor Beginn der Behandlung mit dir.
+
+---
+
+## WhatsApp-Vorlage Terminbestätigung (manuell)
+
+Teresa bestätigt Termine selbst per WhatsApp. Der fertige Link steht in der
+**Rückruf-Aufgabe** in HubSpot (Zeile „Terminbestätigung per WhatsApp: …") und öffnet
+WhatsApp mit einem vorformulierten Entwurf **an die Kundin**. Vorlage:
+
+> Hallo {Vorname}, hier ist Teresa von DIE BIANCO. Dein Termin für {Behandlung}:
+> [Datum] um [Uhrzeit], Siedlung Egelsberg 1, 47802 Krefeld. Bitte plane ca. [Dauer] ein.
+> Falls etwas dazwischenkommt, sag mir bitte mindestens 24 Stunden vorher Bescheid. Bis bald!
+
+`[Datum]`, `[Uhrzeit]` und `[Dauer]` bleiben als Platzhalter stehen – Teresa ersetzt sie
+im WhatsApp-Entwurf (oder formuliert frei um). Dauer-Richtwerte:
+Schnitt ca. 1–1,5 h · Farbe/Ansatz ca. 2–3 h · Strähnen/Blondierung ca. 2–4 h ·
+Balayage ca. 3–5 h · Grey Blending ca. 3–5 h · Keratin ca. 2–3 h · Beratung ca. 30 Min.
 
 ---
 
@@ -29,16 +60,20 @@ vielen Dank – deine Anfrage für {Behandlung} ist bei uns angekommen.
 Teresa meldet sich innerhalb von 24 Stunden (Mo–Sa) persönlich bei dir – per Telefon oder WhatsApp.
    (ohne WhatsApp-Wunsch: „… persönlich bei dir – telefonisch.")
 
+Du hast es eilig oder eine kurze Frage? Am schnellsten erreichst du uns per WhatsApp: [Schreib uns auf WhatsApp]
+   (Text-Version: nackter Link https://wa.me/491743091973?text=… mit vorformuliertem Text)
+
 Dein Wunschzeitraum: {Zeitraum}.        (nur wenn ein Zeitraum gewählt wurde)
    (bei „Samstag" zusätzlich: „Samstags öffnen wir schon um 7 Uhr.")
 
-Zur Orientierung (ab-Preise):            (nur wenn MAIL_PREISE_ANZEIGEN = true)
+Zur Orientierung – unsere ab-Preise:     (nur wenn MAIL_PREISE_ANZEIGEN = true)
 – Damenschnitt ab 80 €
 – Ansatzfarbe ab 65 €
 – Strähnen ab 150 €
 – Balayage ab 300 €
 – Keratin ab 300 €
 – Grey Blending ab 390 €
+Alle Angaben sind ab-Preise.
 
 So findest du uns:
 Siedlung Egelsberg 1, 47802 Krefeld
@@ -46,14 +81,17 @@ Karte: {Google-Maps-Link}
 Mo–Fr 9–17 Uhr · Sa 7–14 Uhr · nur mit Termin
 Telefon: +49 174 3091973
 
-Unsere Ergebnisse: {Website}/ergebnisse
 Behandlungen & Preise: {Website}/behandlungen-preise
 
 Du musst jetzt nichts weiter tun – Teresa meldet sich persönlich bei dir.
 
 Bis bald & liebe Grüße
 Dein Team von DIE BIANCO
+
+[Standard-Klausel Preise]        (siehe oben)
 ```
+
+Die ab-Preise entsprechen den Kategorien auf `/behandlungen-preise`.
 
 ---
 
@@ -75,6 +113,8 @@ Du kannst dir hier auch direkt einen Rückruf aussuchen: {Rückruf-Link}
 
 Bis bald & liebe Grüße
 Dein Team von DIE BIANCO
+
+[Standard-Klausel Preise]
 ```
 
 ---
@@ -97,12 +137,52 @@ Du kannst dir hier auch direkt einen Rückruf aussuchen: {Rückruf-Link}
 
 Liebe Grüße
 Dein Team von DIE BIANCO
+
+[Standard-Klausel Preise]
 ```
 
 ---
 
-## 4) Terminbestätigung  _(derzeit AUS)_
-*Wenn ein Termin vereinbart ist und noch keine Bestätigung verschickt wurde.*
+## 4) Reaktivierung
+*Einmalig, wenn eine Anfrage mit Marketing-Einwilligung ≥ 30 Tage offen ist.*
+
+**Betreff:** Dein Wunschtermin ist noch offen
+
+```
+Hallo {Vorname},
+
+dein Wunschtermin bei DIE BIANCO ist noch offen – wir würden dich gerne verwöhnen.
+Gerade im Herbst ist die perfekte Zeit für einen frischen Farb-Look.
+   (nur von September bis November)
+Melde dich einfach, wenn es passt: +49 174 3091973.
+
+Liebe Grüße
+Dein Team von DIE BIANCO
+
+[Standard-Klausel Preise]
+```
+
+---
+
+## Fußzeile (unter jeder Kunden-Mail 2–4)
+
+```
+DIE BIANCO · Siedlung Egelsberg 1, 47802 Krefeld · +49 174 3091973 · salon@diebianco.de
+Impressum · Datenschutz · Keine E-Mails mehr {Abmeldelink}
+```
+
+Die Eingangsbestätigung (1) nutzt dieselben Kontaktdaten, endet aber mit
+Impressum/Datenschutz **ohne** Abmeldelink (transaktional).
+
+---
+
+# Nicht mehr automatisch (Stand 30.09.2026)
+
+Diese Texte werden **nicht mehr automatisch** verschickt (Beschluss vom 30.09.2026),
+bleiben hier aber für später erhalten. Terminbestätigung/-erinnerung übernimmt Teresa
+manuell per WhatsApp (Vorlage oben); die Bewertungsbitte wurde entfernt.
+
+### (ehemals) Terminbestätigung
 
 **Betreff:** Dein Termin bei DIE BIANCO ist bestätigt
 
@@ -123,14 +203,7 @@ Wir freuen uns auf dich!
 Dein Team von DIE BIANCO
 ```
 
-Dauer je Behandlung: Schnitt ca. 1–1,5 h · Farbe/Ansatz ca. 2–3 h ·
-Strähnen/Blondierung ca. 2–4 h · Balayage ca. 3–5 h · Grey Blending ca. 3–5 h ·
-Keratin ca. 2–3 h · Beratung ca. 30 Min.
-
----
-
-## 5) Terminerinnerung  _(derzeit AUS)_
-*20–32 Stunden vor dem Termin.*
+### (ehemals) Terminerinnerung
 
 **Betreff:** Erinnerung an deinen Termin bei DIE BIANCO
 
@@ -149,29 +222,7 @@ Bis gleich & liebe Grüße
 Dein Team von DIE BIANCO
 ```
 
----
-
-## 6) Reaktivierung
-*Einmalig, wenn eine Anfrage mit Marketing-Einwilligung ≥ 30 Tage offen ist.*
-
-**Betreff:** Dein Wunschtermin ist noch offen
-
-```
-Hallo {Vorname},
-
-dein Wunschtermin bei DIE BIANCO ist noch offen – wir würden dich gerne verwöhnen.
-Gerade im Herbst ist die perfekte Zeit für einen frischen Farb-Look.
-   (nur von September bis November)
-Melde dich einfach, wenn es passt: +49 174 3091973.
-
-Liebe Grüße
-Dein Team von DIE BIANCO
-```
-
----
-
-## 7) Bewertungsbitte  _(derzeit AUS)_
-*Nach dem Termin (Status „erschienen"), nur mit Marketing-Einwilligung.*
+### (ehemals) Bewertungsbitte
 
 **Betreff:** Wie gefällt dir dein Ergebnis?
 
@@ -185,15 +236,3 @@ Wenn du magst, freuen wir uns riesig über eine kurze Bewertung – das hilft an
 Danke dir & liebe Grüße
 Dein Team von DIE BIANCO
 ```
-
----
-
-## Fußzeile (unter jeder Mail 2–7)
-
-```
-DIE BIANCO · Siedlung Egelsberg 1, 47802 Krefeld · +49 174 3091973 · salon@diebianco.de
-Impressum · Datenschutz · Keine E-Mails mehr {Abmeldelink}
-```
-
-Die Eingangsbestätigung (1) nutzt dieselben Kontaktdaten, endet aber mit
-Impressum/Datenschutz ohne Abmeldelink (transaktional).
