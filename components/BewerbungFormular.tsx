@@ -355,8 +355,9 @@ const stil = `
 .bw-karte.bw-aktiv { border-color:var(--gold); background:var(--gold); color:#fff; }
 .bw-icon { color:var(--gold); font-size:20px; line-height:1; flex-shrink:0; }
 .bw-karte.bw-aktiv .bw-icon { color:#fff; }
-.bw-namen { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-@media (max-width:460px){ .bw-namen { grid-template-columns:1fr; } }
+.bw-namen { display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:end; }
+.bw-namen > .bw-label { min-width:0; }
+@media (max-width:520px){ .bw-namen { grid-template-columns:1fr; } }
 .bw-label { display:flex; flex-direction:column; gap:6px; font-size:14px; font-weight:500; }
 .bw-optional { color:var(--taupe); font-weight:400; }
 .bw-input,.bw-textarea { font-size:16px; min-height:48px; padding:12px 14px; border:1.5px solid var(--sand); border-radius:10px; background:var(--cream); color:var(--dark); width:100%; }
