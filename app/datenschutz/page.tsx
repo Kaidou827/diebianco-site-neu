@@ -452,6 +452,35 @@ export default function DatenschutzPage() {
             </p>
           </div>
         </div>
+
+        {/* Bewerbungen */}
+        <div id="bewerbung" className="bg-white/90 rounded-lg shadow-lg p-6 mb-6 border border-gray-200 scroll-mt-24">
+          <h2 className="text-2xl font-bold mb-4 text-[#333]">Bewerbungen</h2>
+          <p className="text-gray-700 mb-4">
+            Wenn Sie sich über unsere Bewerbungsformulare (z. B. für eine Ausbildung oder eine Stelle als Friseur/in)
+            bei uns bewerben, verarbeiten wir die von Ihnen gemachten Angaben (u. a. Name, Telefonnummer, ggf.
+            E-Mail-Adresse und Ihre Antworten im Formular) ausschließlich zum Zweck der Durchführung des
+            Bewerbungsverfahrens.
+          </p>
+          <p className="text-gray-700 mb-4">
+            Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Anbahnung eines Beschäftigungsverhältnisses) i. V. m.
+            § 26 BDSG.
+          </p>
+          <p className="text-gray-700 mb-4">
+            Empfänger Ihrer Bewerbungsdaten ist ausschließlich DIE BIANCO. Die Bewerbungen gehen im Postfach
+            businessdiebianco@gmail.com ein. Als Mail-Provider setzen wir Google (Gmail) ein; Google verarbeitet die
+            E-Mails in unserem Auftrag als Auftragsverarbeiter.
+          </p>
+          <p className="text-gray-700 mb-4">
+            Ihre Bewerbungsdaten werden bis zum Abschluss des Bewerbungsverfahrens und anschließend für höchstens
+            weitere 6 Monate gespeichert und danach gelöscht – es sei denn, es kommt zu einem Beschäftigungsverhältnis
+            oder Sie haben einer längeren Speicherung ausdrücklich zugestimmt.
+          </p>
+          <p className="text-gray-700">
+            Sie können Ihre Einwilligung jederzeit widerrufen sowie Auskunft, Berichtigung oder Löschung Ihrer Daten
+            verlangen. Wenden Sie sich dazu bitte an businessdiebianco@gmail.com.
+          </p>
+        </div>
       </div>
     </main>
   )
