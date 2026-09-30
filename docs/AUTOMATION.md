@@ -95,8 +95,10 @@ Orientiert sich an den ab-Preisen aus `/behandlungen-preise`.
   Wunsch-Behandlung, Wunschzeitraum, WhatsApp-Wunsch, Nachricht,
   Priorität, Lead-Qualität, Lead-Wert, Quelle-Seite – und dem Owner „Teresa".
 - **Eine offene Aufgabe** „Rückruf: {Vorname} – {Behandlung} – Wunsch: {Zeitraum}"
-  mit Telefon/WhatsApp/Nachricht/Priorität/Eingang im Text, Typ **Anruf**,
-  Priorität passend zur Lead-Priorität, fällig gemäß Regel oben.
+  mit Telefon/WhatsApp/Nachricht/Priorität/Eingang im Text – plus einer Zeile
+  **„Terminbestätigung per WhatsApp: …"** (fertiger WhatsApp-Entwurf an die Kundin,
+  nur bei gültiger Nummer). Typ **Anruf**, Priorität passend zur Lead-Priorität,
+  fällig gemäß Regel oben, mit Erinnerung (Push) zur Fälligkeit.
 - **Team-Mail** (an `MAIL_TO`) mit denselben Infos + Deep-Link zum Kontakt.
 
 Die Kundin erhält parallel die **Eingangsbestätigung** (Absender
@@ -174,21 +176,25 @@ werden als **Unix-Millisekunden** geschrieben.
 |---|---|---|---|---|
 | Digest | `/api/cron/digest` | Mo–Sa 08:30 | 06:30 / 07:30 | `lead_status_intern ∈ {neu, nicht_erreicht}`, sortiert Priorität→createdate |
 | Nicht erreicht | `/api/cron/nicht-erreicht` | tägl. 10:00 | 08:00 / 09:00 | `nicht_erreicht`, ≥48 h seit `nicht_erreicht_seit`, Zähler-Stufen 1→2 |
-| Termine | `/api/cron/termine` | tägl. 09:00 + 16:00 | 07:00 + 14:00 / 08:00 + 15:00 | `termin_vereinbart` + `termin_datum`; Bestätigung/Erinnerung (Schalter `TERMIN_MAILS_ENABLED`), Status-Aufgabe, optional Bewertung |
+| Termine | `/api/cron/termine` | tägl. 09:00 | 07:00 / 08:00 | `termin_vereinbart` + `termin_datum`, Termin ≥2 Tage her → **Status-Aufgabe** für Teresa (keine Termin-Mails mehr) |
 | Reaktivierung | `/api/cron/reaktivierung` | Mo 09:30 | 07:30 / 08:30 | `einwilligung_marketing`, alt ≥30 Tage, offener Status |
+| Archiv | `/api/cron/archiv` | Mo 08:00 | 06:00 / 07:00 | `kein_interesse`, letzte Änderung ≥90 Tage → `archiv` (kein Löschen) |
 
 > **Winterzeit:** UTC-Crons verschieben sich nicht – im Winter laufen die Jobs
 > eine Stunde früher (Berlin). Das ist unkritisch, weil die Jobs Wochentag/
 > Fenster selbst prüfen (kein exakter Uhrzeit-Gate).
+>
+> **Status `spaeter` (Wiedervorlage):** wird von Digest und Nicht-erreicht
+> ignoriert (keine automatischen Mails/Listen) – reine manuelle Wiedervorlage.
 
 ### Betriebsmodell
 
 - **Aktuell: Pro-Plan mit Einzel-Crons** (so in `vercel.json`): Digest Mo–Sa
-  06:30 UTC, Nicht-erreicht 08:00, Termine 07:00 **und** 14:00, Reaktivierung
-  Mo 07:30 – die UTC-Zeiten entsprechen den Berlin-Zielzeiten im Sommer (im
-  Winter 1 h früher, unkritisch). `/api/cron/daily` ist **nicht geplant**,
+  06:30 UTC, Nicht-erreicht 08:00, Termine 07:00, Reaktivierung Mo 07:30,
+  Archiv Mo 06:00 – die UTC-Zeiten entsprechen den Berlin-Zielzeiten im Sommer
+  (im Winter 1 h früher, unkritisch). `/api/cron/daily` ist **nicht geplant**,
   bleibt aber als **manuell aufrufbarer Fallback** und führt alle Jobs
-  nacheinander aus.
+  nacheinander aus (inkl. Archiv).
 
   ```json
   {
@@ -196,15 +202,14 @@ werden als **Unix-Millisekunden** geschrieben.
       { "path": "/api/cron/digest",         "schedule": "30 6 * * 1-6" },
       { "path": "/api/cron/nicht-erreicht", "schedule": "0 8 * * *" },
       { "path": "/api/cron/termine",        "schedule": "0 7 * * *" },
-      { "path": "/api/cron/termine",        "schedule": "0 14 * * *" },
-      { "path": "/api/cron/reaktivierung",  "schedule": "30 7 * * 1" }
+      { "path": "/api/cron/reaktivierung",  "schedule": "30 7 * * 1" },
+      { "path": "/api/cron/archiv",         "schedule": "0 6 * * 1" }
     ]
   }
   ```
 - **Hobby-Alternative (max. 2 Crons, nur täglich):** stattdessen nur
-  `{ "path": "/api/cron/daily", "schedule": "30 7 * * *" }` planen. *Grenze:*
-  der zweite Termin-Lauf (16:00) entfällt → Erinnerungen für Abend-Termine
-  können knapp werden (siehe 20–32-h-Fenster).
+  `{ "path": "/api/cron/daily", "schedule": "30 7 * * *" }` planen (führt alle
+  Jobs inkl. Archiv aus).
 
 ### Absicherung & Dry-Run
 
@@ -216,27 +221,29 @@ werden als **Unix-Millisekunden** geschrieben.
 - Lokal testen:
   `curl -H "Authorization: Bearer $CRON_SECRET" "http://localhost:3000/api/cron/daily?dry=1"`
 
-### Zusätzliche Properties (heute angelegt)
+### Properties
 
-- `review_mail_gesendet` (datetime) – Idempotenz der Bewertungsbitte.
-- `termin_status_aufgabe_gesendet` (datetime) – verhindert tägliche Doppel-Aufgaben
-  beim „Status setzen"-Nudge.
-- `nicht_erreicht_seit` (datetime) – **Anker** für den Nachfass-Rhythmus. Der Job
-  stempelt sie beim ersten Antreffen von `lead_status_intern=nicht_erreicht`
-  (wenn leer); 48 h / 5 Tage zählen ab diesem Stempel (nicht ab `hs_lastmodifieddate`,
-  das jede Pflege-Änderung zurücksetzen würde). Wechselt der Status weg von
-  `nicht_erreicht`, leert der Job den Anker und setzt `nicht_erreicht_mails_gesendet`
-  auf 0 – ein späteres erneutes „nicht erreicht" zählt damit von vorn.
+- `termin_status_aufgabe_gesendet` (datetime) – **aktiv**: verhindert doppelte
+  „Status setzen"-Aufgaben nach dem Termin.
+- `nicht_erreicht_seit` (datetime) – **aktiv**: Anker für den Nachfass-Rhythmus.
+  Der Job stempelt sie beim ersten Antreffen von `lead_status_intern=nicht_erreicht`
+  (wenn leer); 48 h / 5 Tage zählen ab diesem Stempel (nicht ab `hs_lastmodifieddate`).
+  Wechselt der Status weg von `nicht_erreicht`, leert der Job den Anker und setzt
+  `nicht_erreicht_mails_gesendet` auf 0.
+- `termin_bestaetigung_gesendet`, `termin_erinnerung_gesendet`, `review_mail_gesendet`
+  bleiben im Portal, werden aber **nicht mehr im Code geschrieben** (Termin-Mails und
+  Bewertungsbitte entfernt, Stand 30.09.2026).
+- Status-Option **`spaeter`** („Später / Wiedervorlage") wird im Portal ergänzt.
 
 ### Einwilligung & Abmeldung
 
-- **Transaktional** (kein Opt-in nötig): Terminbestätigung, -erinnerung,
-  Nicht-erreicht-Mails.
-- **Marketing** (nur bei `einwilligung_marketing = true`): Reaktivierung, Bewertungsbitte.
-- Jede Kunden-Mail trägt einen **Abmeldelink** `/api/abmelden?t={Token}`
-  (HMAC aus Kontakt-ID + `ABMELDE_SECRET`). Der Link setzt `einwilligung_marketing`
-  auf `false` und zeigt eine schlichte Bestätigungsseite. Ohne `ABMELDE_SECRET`
-  entfällt der Link.
+- **Transaktional** (kein Opt-in nötig): Eingangsbestätigung, Nicht-erreicht-Mails.
+- **Marketing** (nur bei `einwilligung_marketing = true`): Reaktivierung.
+- Jede Marketing-/Nachfass-Mail (Nicht-erreicht, Reaktivierung) trägt einen
+  **Abmeldelink** `/api/abmelden?t={Token}` (HMAC aus Kontakt-ID + `ABMELDE_SECRET`).
+  Der Link setzt `einwilligung_marketing` auf `false` und zeigt eine schlichte
+  Bestätigungsseite. Ohne `ABMELDE_SECRET` entfällt der Link. Die transaktionale
+  Eingangsbestätigung endet mit Impressum/Datenschutz ohne Abmeldelink.
 
 ### Cron-ENV-Variablen
 
@@ -245,24 +252,34 @@ werden als **Unix-Millisekunden** geschrieben.
 | `CRON_SECRET` | Bearer-Token zum Schutz der Cron-Routen (Vercel sendet ihn automatisch) |
 | `ABMELDE_SECRET` | HMAC-Secret für Abmelde-Tokens |
 | `MEETINGS_LINK_RUECKRUF` | optionaler Rückruf-Buchungslink (Nicht-erreicht-Mail); leer → Satz entfällt |
-| `REVIEW_MAIL_ENABLED` | `true` aktiviert die Bewertungsbitte (bleibt vorerst `false`) |
-| `GOOGLE_REVIEW_URL` | Ziel der Bewertungsbitte |
-| `TERMIN_MAILS_ENABLED` | `true` aktiviert Terminbestätigung + -erinnerung aus HubSpot (Default aus – StudioLution übernimmt die Erinnerung) |
+
+### Was Teresa in HubSpot tut
+
+- **Nach jedem Kontakt den Status setzen** (`lead_status_intern`): kontaktiert,
+  nicht_erreicht, termin_vereinbart, kein_interesse oder spaeter (Wiedervorlage).
+- **Bei einem Termin:** Status auf `termin_vereinbart` **und** `termin_datum` setzen.
+  Die **Terminbestätigung schickt Teresa selbst per WhatsApp** – der fertige Link
+  steht in der Rückruf-Aufgabe (Zeile „Terminbestätigung per WhatsApp: …").
+  `termin_datum` ist **Voraussetzung** für die automatische **Status-Aufgabe** 2 Tage
+  nach dem Termin.
+- **Nach dem Termin:** Status auf `erschienen` bzw. `nicht_erschienen` setzen – die
+  Status-Aufgabe erinnert daran.
+
+### Was Kundinnen automatisch bekommen
+
+- **Eingangsbestätigung** – sofort nach der Anfrage (transaktional).
+- **Nicht-erreicht 1 & 2** – nach Statuswechsel auf `nicht_erreicht` (≥48 h, dann +5 Tage).
+- **Reaktivierung** – einmalig nach ≥30 Tagen, **nur mit Marketing-Einwilligung**.
+
+Keine automatische Terminbestätigung/-erinnerung mehr (Teresa per WhatsApp), keine
+Bewertungsbitte.
 
 ### Was läuft wo (HubSpot vs. StudioLution)
 
-Klare Aufteilung, um Doppel-Mails zu vermeiden:
-
-- **HubSpot (dieses System) = vor dem Termin:** Lead-Aufbereitung, Digest,
-  Nachfassen („nicht erreicht"), Reaktivierung – alles bis zur Terminvereinbarung.
-- **StudioLution (Salon-Software) = rund um den Termin:** Terminbestätigung und
-  -erinnerung verschickt StudioLution selbst.
-
-Deshalb sind die HubSpot-Terminmails (Job 3a/3b) über `TERMIN_MAILS_ENABLED`
-**standardmäßig aus**. Ob HubSpot zusätzlich erinnern soll, entscheidet die
-Inhaberin; bei „ja" einfach `TERMIN_MAILS_ENABLED=true` setzen. Unabhängig davon
-aktiv bleiben die **Status-Aufgabe nach dem Termin** (3c) und – nach Freigabe über
-`REVIEW_MAIL_ENABLED` – die **Bewertungsbitte** (3d).
+- **HubSpot (dieses System) = vor dem Termin:** Lead-Aufbereitung, Digest, Nachfassen,
+  Reaktivierung, Status-Aufgabe nach dem Termin, Archivierung.
+- **StudioLution / Teresa = rund um den Termin:** Terminbestätigung und -erinnerung
+  (Teresa per WhatsApp bzw. StudioLution).
 
 ## Testen
 
