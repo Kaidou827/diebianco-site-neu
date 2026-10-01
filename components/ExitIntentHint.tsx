@@ -14,8 +14,12 @@ export default function ExitIntentHint() {
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    // Landingpages mit eigenem CTA + Jobs-Seiten → globales Exit-Popup hier aus.
-    if (["/kontakt", "/grey-blending-krefeld", "/grey-blending-beratung"].includes(pathname) || pathname.startsWith("/jobs")) return
+    // Nur im Kunden-Kontext zeigen: wenn jemand unsere Dienstleistungen/Behandlungen
+    // anschaut und noch unentschlossen ist. Überall sonst (Startseite, Blog, Jobs,
+    // Über-uns, …) bewusst aus. Die Kontaktseite hat ihr eigenes Anruf-Popup.
+    const istDienstleistungsseite =
+      pathname.startsWith("/dienstleistungen") || pathname === "/behandlungen-preise"
+    if (!istDienstleistungsseite) return
 
     const isDesktop = window.matchMedia("(min-width: 1024px)").matches
     if (!isDesktop) return
