@@ -65,6 +65,9 @@ export default function SiteFooter() {
               <a href="/datenschutz" className="text-white/50 text-sm hover:text-[#D4C6A6] transition-colors">
                 Datenschutz
               </a>
+              <a href="/jobs" className="text-white/50 text-sm hover:text-[#D4C6A6] transition-colors">
+                Jobs
+              </a>
               <a href="/mentoring" className="text-white/50 text-sm hover:text-[#D4C6A6] transition-colors">
                 Mentoring
               </a>

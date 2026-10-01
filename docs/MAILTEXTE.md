@@ -236,3 +236,53 @@ Wenn du magst, freuen wir uns riesig über eine kurze Bewertung – das hilft an
 Danke dir & liebe Grüße
 Dein Team von DIE BIANCO
 ```
+
+---
+
+# Bewerbungen
+
+Aus den Jobs-Landingpages (`/jobs/…`). Getrennt vom Lead-Flow, **keine** Preis-Klausel,
+**kein** Abmeldelink (Vertragsanbahnung). Absender „DIE BIANCO \<termine@diebianco.de\>".
+
+## Benachrichtigung an den Salon
+*An `BEWERBUNG_MAIL_TO` (Default businessdiebianco@gmail.com), CC `BEWERBUNG_MAIL_CC`, Reply-To = E-Mail der Bewerber/in.*
+
+**Betreff:** ✂️ Neue Bewerbung – {Stellenlabel} – {Vorname} {Nachname}
+
+```
+Stelle: {Stellenlabel}
+Name: {Vorname} {Nachname}
+Telefon: {Telefon}
+Kontaktwunsch: {WhatsApp | Anruf}
+E-Mail: {E-Mail}            (nur wenn angegeben)
+… alle Formular-Antworten als lesbare Tabelle …
+
+[Auf WhatsApp antworten]   (nur bei gültiger Telefonnummer)   [Anrufen]
+
+Quelle: {quelle_seite} · utm: {source}/{medium}/{campaign} · fbclid: {ja|nein}
+Eingang: {Datum/Uhrzeit Europe/Berlin}
+
+Bewerberdaten: nur für das Bewerbungsverfahren nutzen, spätestens 6 Monate nach Abschluss löschen.
+```
+
+**WhatsApp-Vorlage (Teresa → Bewerber/in), Link in der Mail:**
+> Hallo {Vorname}, hier ist Teresa von DIE BIANCO. Danke für deine Bewerbung als {Stellenlabel}!
+> Wann passt es dir für ein kurzes Telefonat oder ein Kennenlernen im Salon? Liebe Grüße, Teresa
+
+## Eingangsbestätigung an die Bewerber/in
+*Nur wenn eine E-Mail angegeben wurde. Reply-To businessdiebianco@gmail.com.*
+
+**Betreff:** Deine Bewerbung bei DIE BIANCO ist angekommen
+
+```
+Hallo {Vorname},
+
+danke für deine Bewerbung als {Stellenlabel}.
+Teresa schaut sich deine Angaben persönlich an und meldet sich innerhalb von 2 Werktagen per {WhatsApp | Telefon} bei dir.
+
+Du hast schon einen Lebenslauf oder Fotos deiner Arbeiten? Schick sie gern direkt an
+businessdiebianco@gmail.com oder per WhatsApp: {wa.me-Link}
+
+Bis bald,
+dein Team von DIE BIANCO · Siedlung Egelsberg 1 · 47802 Krefeld
+```

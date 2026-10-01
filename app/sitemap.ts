@@ -10,6 +10,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/ueber-uns`, priority: 0.8 },
     { url: `${baseUrl}/gemeinsam-erleben`, priority: 0.8 },
     { url: `${baseUrl}/kontakt`, priority: 0.9 },
+    { url: `${baseUrl}/jobs`, priority: 0.8 },
+    { url: `${baseUrl}/jobs/ausbildung-friseur-krefeld`, priority: 0.8 },
+    { url: `${baseUrl}/jobs/friseur-krefeld`, priority: 0.8 },
     // /ergebnisse ist vorübergehend offline (Neuaufbau) – daher nicht in der Sitemap.
     { url: `${baseUrl}/grey-blending-beratung`, priority: 0.9 },
     { url: `${baseUrl}/grey-blending-krefeld`, priority: 0.9 },
