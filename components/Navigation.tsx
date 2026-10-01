@@ -115,6 +115,12 @@ export default function Navigation() {
               >
                 Blog
               </Link>
+              <Link
+                href="/jobs"
+                className="px-3 py-2 text-sm font-medium transition-colors text-white hover:text-white/80"
+              >
+                Jobs
+              </Link>
 
               {/* Leistungen Dropdown - Desktop */}
               <div
@@ -283,6 +289,13 @@ export default function Navigation() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 <span className="text-lg">Blog</span>
+              </Link>
+              <Link
+                href="/jobs"
+                className="flex items-center h-14 px-4 text-white hover:bg-white/10 rounded-lg mb-1 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span className="text-lg">Jobs</span>
               </Link>
 
               {/* Leistungen Accordion */}
