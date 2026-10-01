@@ -26,7 +26,7 @@ const BEWERBUNG_MAIL_TO = (process.env.BEWERBUNG_MAIL_TO || "businessdiebianco@g
   .split(/[;,]/)
   .map((s) => s.trim())
   .filter(Boolean)
-const BEWERBUNG_MAIL_CC = (process.env.BEWERBUNG_MAIL_CC || "")
+const BEWERBUNG_MAIL_CC = (process.env.BEWERBUNG_MAIL_CC || "scharam.saleh@gmail.com")
   .split(/[;,]/)
   .map((s) => s.trim())
   .filter(Boolean)
