@@ -208,7 +208,7 @@ function FeaturedCard({ title, description, image, date, category, slug = "" }) 
   return (
     <Card className="group relative h-full bg-black/20 backdrop-blur-sm rounded-xl overflow-hidden border border-white/20 transition-all duration-300 hover:bg-white/15 hover:-translate-y-1 hover:shadow-2xl">
       <Link
-        href={`/ Blog / ${slug} / `}
+        href={`/Blog/${slug}`}
         className="block h-full"
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       >
@@ -259,7 +259,7 @@ function FeaturedCard({ title, description, image, date, category, slug = "" }) 
 
 function ArticleCard({ title, description, category, date, slug = "", image }) {
   return (
-    <Link href={`/ Blog / ${slug} / `} className="group">
+    <Link href={`/Blog/${slug}`} className="group">
       <div className="space-y-3 py-0 bg-transparent">
         <div className="relative h-48 rounded-lg overflow-hidden border border-gray-800 group-hover:border-[#d4c6a6]/50 transition-colors">
           <Image src={image || "/placeholder.svg"} alt={`${title} thumbnail`} fill className="object-cover" />
