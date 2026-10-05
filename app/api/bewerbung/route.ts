@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { after, type NextRequest, NextResponse } from "next/server"
 import {
   bewerbungSchema,
   bewerbungAntwortenLesbar,
@@ -111,28 +111,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     )
   }
 
-  // 2) Eingangsbestätigung an die Bewerber/in (best effort, nur mit E-Mail).
+  // 2) Eingangsbestätigung NACH der Antwort senden – blockiert die Danke-Seite nicht.
+  //    after() hält die Function auf Vercel am Leben, bis die Mail raus ist (best effort).
   if (d.email) {
-    try {
-      const inhalt = bewerbungEingangsbestaetigung({
-        vorname: d.vorname,
-        stelleLabel,
-        kontaktwegLabel: d.kontaktwunsch === "anruf" ? "Telefon" : "WhatsApp",
-        waSalonLink: waBewerbungLink(stelle),
-        bewerbungMail: BEWERBUNG_MAIL_ADRESSE,
-      })
-      await transporter.sendMail({
-        from: MAIL_FROM_FULL,
-        to: d.email,
-        replyTo: BEWERBUNG_MAIL_ADRESSE,
-        subject: inhalt.subject,
-        text: inhalt.text,
-        html: inhalt.html,
-      })
-    } catch (err) {
-      console.error("[bewerbung] Bestätigungsmail fehlgeschlagen:", err)
-    }
+    const empfaengerEmail = d.email
+    after(async () => {
+      try {
+        const inhalt = bewerbungEingangsbestaetigung({
+          vorname: d.vorname,
+          stelleLabel,
+          kontaktwegLabel: d.kontaktwunsch === "anruf" ? "Telefon" : "WhatsApp",
+          waSalonLink: waBewerbungLink(stelle),
+          bewerbungMail: BEWERBUNG_MAIL_ADRESSE,
+        })
+        await transporter.sendMail({
+          from: MAIL_FROM_FULL,
+          to: empfaengerEmail,
+          replyTo: BEWERBUNG_MAIL_ADRESSE,
+          subject: inhalt.subject,
+          text: inhalt.text,
+          html: inhalt.html,
+        })
+      } catch (err) {
+        console.error("[bewerbung] Bestätigungsmail fehlgeschlagen:", err)
+      }
+    })
   }
 
+  // Antwort sofort – die Salon-Mail (oben, await) ist raus; die Bestätigung folgt via after().
   return NextResponse.json({ ok: true })
 }
