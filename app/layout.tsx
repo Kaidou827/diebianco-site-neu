@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   creator: "Teresa Bianco",
   publisher: "Teresa Bianco Salon",
   robots: "index, follow",
+  other: {
+    "facebook-domain-verification": "cmnskalp2s9y2gvkie66ty6iznl9mw",
+  },
   openGraph: {
     title: "Teresa Bianco: Exklusiver Friseur in Krefeld",
     description:
