@@ -16,8 +16,8 @@ import { waBewerbungAntwortLink, waBewerbungLink } from "@/lib/whatsapp"
  * ─────────────────────────────────────────────────────────────────────────
  * Backend der Bewerbungs-Landingpages. Getrennt vom Lead-/Anfrage-Flow.
  * Muster wie /api/anfrage: JSON, serverseitige Validierung (zod), Honeypot,
- * Nodemailer über den geteilten Transport. Kein HubSpot, außer
- * BEWERBUNG_HUBSPOT === "true" (dann nur Kontakt vorbereiten).
+ * Nodemailer über den geteilten Transport. Bewusst KEIN HubSpot – Bewerber
+ * sind keine Kunden und landen nicht im CRM (nur Mail an den Salon + CC).
  * Kein Redirect hier – das Formular leitet auf /jobs/danke weiter.
  * ─────────────────────────────────────────────────────────────────────────
  */
@@ -34,34 +34,6 @@ const BEWERBUNG_MAIL_ADRESSE = BEWERBUNG_MAIL_TO[0] || "businessdiebianco@gmail.
 
 function kontaktwunschLabel(v: string): string {
   return KONTAKTWUNSCH.find((o) => o.value === v)?.label ?? "WhatsApp"
-}
-
-/** Best-effort: Kontakt in HubSpot vorbereiten (nur wenn ausdrücklich aktiviert). */
-async function hubspotVorbereiten(d: {
-  stelle: Stelle
-  vorname: string
-  nachname: string
-  phone: string
-  email: string
-}): Promise<void> {
-  if (process.env.BEWERBUNG_HUBSPOT !== "true") return
-  try {
-    const { erstelleKontakt, sucheKontaktId, aktualisiereKontakt, hubspotKonfiguriert } = await import("@/lib/hubspot")
-    if (!hubspotKonfiguriert()) return
-    const properties: Record<string, string> = {
-      firstname: d.vorname,
-      bewerbung_stelle: d.stelle,
-      lifecyclestage: "other",
-    }
-    if (d.nachname) properties.lastname = d.nachname
-    if (d.phone) properties.phone = d.phone
-    if (d.email) properties.email = d.email
-    const id = d.email ? await sucheKontaktId(d.email) : null
-    if (id) await aktualisiereKontakt(id, properties)
-    else await erstelleKontakt(properties)
-  } catch (err) {
-    console.error("[bewerbung] HubSpot vorbereiten fehlgeschlagen:", err)
-  }
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -161,9 +133,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.error("[bewerbung] Bestätigungsmail fehlgeschlagen:", err)
     }
   }
-
-  // 3) HubSpot nur vorbereiten, wenn ausdrücklich aktiviert (best effort).
-  await hubspotVorbereiten({ stelle, vorname: d.vorname, nachname: d.nachname, phone: phoneE164 || d.telefon, email: d.email })
 
   return NextResponse.json({ ok: true })
 }
