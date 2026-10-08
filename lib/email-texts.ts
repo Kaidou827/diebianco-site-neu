@@ -136,10 +136,11 @@ export interface BestaetigungDaten {
 }
 
 const PREIS_ZEILEN = [
-  "Damenschnitt ab 80 €",
-  "Ansatzfarbe ab 65 €",
+  "Damenschnitt 95 €",
+  "Ansatzfarbe ab 80 €",
+  "Glossing ab 80 €",
   "Strähnen ab 150 €",
-  "Balayage ab 300 €",
+  "Balayage ab 390 €",
   "Keratin ab 300 €",
   "Grey Blending ab 390 €",
 ]
@@ -152,8 +153,8 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
   const perWhatsapp = d.whatsappOk === "ja_gerne"
 
   const meldeSatz = perWhatsapp
-    ? "Teresa meldet sich innerhalb von 24 Stunden (Mo–Sa) persönlich bei dir – per Telefon oder WhatsApp."
-    : "Teresa meldet sich innerhalb von 24 Stunden (Mo–Sa) persönlich bei dir – telefonisch."
+    ? "Teresa meldet sich persönlich bei dir – per Telefon oder WhatsApp."
+    : "Teresa meldet sich persönlich bei dir – telefonisch."
 
   const dankeSatz = hatBehandlung
     ? `deine Anfrage für ${behandlung} ist bei uns angekommen.`

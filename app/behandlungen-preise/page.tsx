@@ -44,7 +44,7 @@ export default function BehandlungenPreise() {
               <div className="space-y-3 md:space-y-4">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Damen – Master Stylist</p>
-                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 80,00 €</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">95,00 €</p>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Care – Cut</p>
@@ -52,7 +52,7 @@ export default function BehandlungenPreise() {
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Waschen / Föhnen (ohne Schnitt)</p>
-                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 45,00 €</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">55,00 €</p>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Herren – Master Stylist</p>
@@ -69,7 +69,7 @@ export default function BehandlungenPreise() {
               <div className="space-y-3 md:space-y-4">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Ansatzfarbe Master Stylist</p>
-                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 65,00 €</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 80,00 €</p>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Komplett Master Stylist</p>
@@ -84,8 +84,12 @@ export default function BehandlungenPreise() {
                   <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 45,00 €</p>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
+                  <p className="text-gray-800 text-sm md:text-base">Glossing</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 80,00 €</p>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Balayage Komplett</p>
-                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 300,00 €</p>
+                  <p className="text-[#2C2C2C] font-medium mt-1 sm:mt-0">ab 390,00 €</p>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-100 last:border-0">
                   <p className="text-gray-800 text-sm md:text-base">Strähnen</p>
