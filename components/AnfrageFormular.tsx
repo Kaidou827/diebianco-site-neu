@@ -334,7 +334,7 @@ export default function AnfrageFormular({
     const waJa = daten.whatsapp_ok === WHATSAPP_JA
     if (err) return `Teresa ruft dich ${zeit ? zeit + " " : ""}an${waJa ? " oder schreibt dir" : ""}`
     if (waJa) return "Teresa ruft dich an oder schreibt dir"
-    return "Teresa meldet sich persönlich bei dir"
+    return "Teresa meldet sich in naher Zukunft persönlich bei dir"
   })()
 
   const sichtbarerStapel = stapelOffen ? stapel : stapel.slice(-3)
@@ -357,7 +357,7 @@ export default function AnfrageFormular({
         <div className="db-kopf">
           <div className="db-kopf-zeile">
             <span className="db-eyebrow">
-              {istDeep ? "✦ Unverbindlich · Antwort in 24h" : "✦ In unter 1 Minute · unverbindlich"}
+              {istDeep ? "✦ Unverbindlich · Antwort in naher Zukunft" : "✦ In unter 1 Minute · unverbindlich"}
             </span>
             <span className="db-rating">
               <Sterne />
@@ -579,7 +579,7 @@ export default function AnfrageFormular({
               <button type="submit" className="db-cta" disabled={isSubmitting}>
                 {isSubmitting ? "Sende…" : variante === "standard" ? "Wunschtermin unverbindlich anfragen" : "Anfrage absenden →"}
               </button>
-              <p className="db-microcopy">Antwort innerhalb von 24h – meist schneller.</p>
+              <p className="db-microcopy">Teresa meldet sich in naher Zukunft persönlich bei dir.</p>
 
               {variante === "standard" && (
                 <div className="db-vertrauen">
@@ -587,7 +587,7 @@ export default function AnfrageFormular({
                   <p className="db-vertrauen-name">– Teresa Bianco</p>
                   <ul className="db-vertrauen-liste">
                     <li>✓ Persönliche Beratung</li>
-                    <li>✓ Antwort innerhalb von 24h</li>
+                    <li>✓ Antwort in naher Zukunft</li>
                     <li>✓ Keine Verpflichtung</li>
                   </ul>
                 </div>

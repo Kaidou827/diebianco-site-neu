@@ -30,7 +30,7 @@ const jsonLd = {
       },
       'priceSpecification': {
         '@type': 'PriceSpecification',
-        'price': '300.00',
+        'price': '390.00',
         'priceCurrency': 'EUR',
       },
     },
