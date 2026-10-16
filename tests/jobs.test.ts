@@ -10,6 +10,7 @@ import {
 import { waBewerbungLink, waBewerbungAntwortLink } from "../lib/whatsapp"
 import { bewerbungBenachrichtigung, bewerbungEingangsbestaetigung } from "../lib/email-texts"
 import { jobPostingData } from "../components/jobs/JobPostingJsonLd"
+import { submitApplicationArgs } from "../components/jobs/DankeTracking"
 
 // ── Schema / Validierung ─────────────────────────────────────────────────────
 test("bewerbungSchema: Minimalfall (nur Schritt-3-Pflichtfelder) ist gültig", () => {
@@ -162,4 +163,18 @@ test("jobPostingData: baseSalary erscheint, wenn übergeben", () => {
   }) as Record<string, any>
   assert.equal(data.baseSalary.value.value, 2600)
   assert.equal(data.baseSalary.currency, "EUR")
+})
+
+// ── Danke-Tracking: SubmitApplication-Argumente ──────────────────────────────
+test("submitApplicationArgs: korrektes Meta-Event, Parameter + eventID", () => {
+  const args = submitApplicationArgs("friseur")
+  assert.equal(args[0], "track")
+  assert.equal(args[1], "SubmitApplication")
+  assert.deepEqual(args[2], { content_category: "bewerbung", content_name: "friseur" })
+  assert.equal(typeof args[3].eventID, "string")
+  assert.ok(args[3].eventID.length > 0)
+  // content_name trägt die Stelle 1:1
+  assert.equal(submitApplicationArgs("azubi")[2].content_name, "azubi")
+  // jeder Aufruf liefert eine eigene eventID (für CAPI-Dedup)
+  assert.notEqual(submitApplicationArgs("azubi")[3].eventID, submitApplicationArgs("azubi")[3].eventID)
 })
