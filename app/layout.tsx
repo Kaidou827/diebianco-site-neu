@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import Script from "next/script"
 import GlobalFloatingCtas from "@/components/GlobalFloatingCtas"
 import ExitIntentHint from "@/components/ExitIntentHint"
+import KlickTracking from "@/components/KlickTracking"
 import "./globals.css"
 
 const inter = Inter({
@@ -45,6 +46,39 @@ export default function RootLayout({
         {/* Only load tracking scripts on production domains, not on preview domains */}
         {process.env.NODE_ENV === "production" && (
           <>
+            {/* Google Consent Mode v2 – Default denied VOR allen Tags; Update via Cookiebot-Events.
+                Hinweis: Cookiebot läuft mit data-blockingmode="auto" (blockt Tags bis Consent).
+                Falls im Cookiebot-Dashboard „Google Consent Mode" aktiv ist, diesen Default dort
+                deaktivieren ODER hier entfernen (sonst doppelter Default). Siehe PR-Beschreibung. */}
+            <Script
+              id="consent-default"
+              strategy="beforeInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('consent','default',{
+                    ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',
+                    analytics_storage:'denied',wait_for_update:500
+                  });
+                  window.addEventListener('CookiebotOnAccept',function(){
+                    var c=(window.Cookiebot&&window.Cookiebot.consent)||{};
+                    gtag('consent','update',{
+                      ad_storage:c.marketing?'granted':'denied',
+                      ad_user_data:c.marketing?'granted':'denied',
+                      ad_personalization:c.marketing?'granted':'denied',
+                      analytics_storage:c.statistics?'granted':'denied'
+                    });
+                  });
+                  window.addEventListener('CookiebotOnDecline',function(){
+                    gtag('consent','update',{
+                      ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'
+                    });
+                  });
+                `,
+              }}
+            />
+
             {/* Cookiebot - DSGVO-konformer Cookie Consent - MUSS ZUERST GELADEN WERDEN */}
             <Script
               id="Cookiebot"
@@ -144,6 +178,7 @@ export default function RootLayout({
         {children}
         <GlobalFloatingCtas />
         <ExitIntentHint />
+        <KlickTracking />
 
         {/* HubSpot Tracking - blockiert durch Cookiebot bis Marketing-Zustimmung - Only in production */}
         {process.env.NODE_ENV === "production" && (

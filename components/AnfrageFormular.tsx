@@ -25,6 +25,8 @@ import type React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import Script from "next/script"
 import { FORMULAR_FELDER, FARB_BEHANDLUNGEN, optionWert, type FeldDefinition } from "@/lib/hubspot/schema"
+import { leadWertProxy } from "@/lib/lead-logic"
+import LeadErfolgTracking from "@/components/LeadErfolgTracking"
 
 type Phase = "behandlung" | "kontakt" | "b" | "fertig"
 
@@ -217,6 +219,20 @@ export default function AnfrageFormular({
   }
 
   const zumAbschluss = () => {
+    // Lead-Erfolgs-Event vorbereiten – LeadErfolgTracking feuert es einmalig
+    // (auf /kontakt/danke nach Redirect bzw. inline in der Fertig-Phase).
+    try {
+      const attr = leseAttribution()
+      const payload = {
+        behandlung: daten.wunsch_behandlung || "",
+        lead_wert: leadWertProxy(daten.wunsch_behandlung || ""),
+        quelle_seite: typeof window !== "undefined" ? window.location.pathname : "",
+        utm_source: attr.utm_source || "",
+        utm_campaign: attr.utm_campaign || "",
+      }
+      sessionStorage.setItem("db_lead_event", JSON.stringify(payload))
+    } catch {}
+
     if (dankeUrl) {
       const name = encodeURIComponent(daten.firstname.trim())
       window.location.assign(`${dankeUrl}${dankeUrl.includes("?") ? "&" : "?"}name=${name}`)
@@ -608,6 +624,7 @@ export default function AnfrageFormular({
               <div className="db-fertig-haken">✓</div>
               <p className="db-fertig-titel">Danke, {daten.firstname || "und bis gleich"} 💛</p>
               <p className="db-fertig-text">{zusage}. Du hörst zeitnah von uns.</p>
+              <LeadErfolgTracking />
             </div>
           )}
         </div>

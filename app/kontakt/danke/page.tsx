@@ -1,5 +1,6 @@
 import Link from "next/link"
 import SiteFooter from "@/components/SiteFooter"
+import LeadErfolgTracking from "@/components/LeadErfolgTracking"
 
 export default async function KontaktDankePage({
   searchParams,
@@ -35,6 +36,7 @@ export default async function KontaktDankePage({
         </section>
       </main>
       <SiteFooter />
+      <LeadErfolgTracking />
     </>
   )
 }
