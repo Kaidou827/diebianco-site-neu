@@ -70,15 +70,16 @@ const PRIORITAET_HOCH = new Set<Behandlung>([
 ])
 const PRIORITAET_MITTEL = new Set<Behandlung>(["farbe_ansatz", "beratungsgespraech"])
 
+// Umsatz-Proxy je Behandlung (ab-Preise aus PR #15). Default 60 für Unbekanntes.
 const LEAD_WERT: Record<Behandlung, number> = {
-  schnitt_styling: 60,
+  schnitt_styling: 95,
   farbe_ansatz: 80,
   straehnen_blondierung: 150,
-  balayage: 300,
+  balayage: 390,
   grey_blending: 390,
   keratin: 300,
-  beratungsgespraech: 60,
-  weiss_ich_noch_nicht: 60,
+  beratungsgespraech: 95,
+  weiss_ich_noch_nicht: 95,
 }
 
 function istBehandlung(wert: string): wert is Behandlung {
