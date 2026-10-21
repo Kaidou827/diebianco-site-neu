@@ -5,6 +5,7 @@ import Script from "next/script"
 import GlobalFloatingCtas from "@/components/GlobalFloatingCtas"
 import ExitIntentHint from "@/components/ExitIntentHint"
 import KlickTracking from "@/components/KlickTracking"
+import AttributionTracker from "@/components/AttributionTracker"
 import "./globals.css"
 
 const inter = Inter({
@@ -179,6 +180,7 @@ export default function RootLayout({
         <GlobalFloatingCtas />
         <ExitIntentHint />
         <KlickTracking />
+        <AttributionTracker />
 
         {/* HubSpot Tracking - blockiert durch Cookiebot bis Marketing-Zustimmung - Only in production */}
         {process.env.NODE_ENV === "production" && (
