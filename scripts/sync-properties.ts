@@ -77,7 +77,7 @@ function bauePayload(feld: FeldDefinition): HubspotProperty {
     label: feld.label,
     type: feld.type,
     fieldType: feld.fieldType,
-    groupName: PROPERTY_GRUPPE.name,
+    groupName: feld.group ?? PROPERTY_GRUPPE.name,
   }
   const optionen = baueOptionen(feld)
   if (optionen) payload.options = optionen
@@ -188,7 +188,7 @@ function offlineVorschau(): void {
   for (const feld of FELDER) {
     const p = bauePayload(feld)
     const opt = p.options ? `  [${p.options.map((o) => o.value).join(", ")}]` : ""
-    console.log(`  • ${p.name}  ${c.grau(`(${p.type}/${p.fieldType})`)}  → ${p.label}${c.grau(opt)}`)
+    console.log(`  • ${p.name}  ${c.grau(`(${p.type}/${p.fieldType}, Gruppe ${p.groupName})`)}  → ${p.label}${c.grau(opt)}`)
   }
   console.log(
     c.gelb(
