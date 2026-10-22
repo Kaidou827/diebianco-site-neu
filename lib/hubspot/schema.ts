@@ -39,6 +39,8 @@ export interface FeldDefinition {
   optionen?: string[]
   /** Wann das Feld befüllt wird. */
   welle: Herkunft
+  /** Abweichende HubSpot-Property-Gruppe (Default: PROPERTY_GRUPPE / anfrage_formular). */
+  group?: string
   /** Nur einblenden, wenn eine Farb-Behandlung gewählt wurde. */
   nurBeiFarbe?: boolean
   /** Pflichtfeld im Formular. */
@@ -221,6 +223,7 @@ export const FELDER: FeldDefinition[] = [
   },
 
   // ── Wiederkehrende Anfragen (vom Backend gesetzt) ──────────────────────────
+  // Liegen in HubSpot in der Gruppe „custom_information" (dort per Connector angelegt).
   {
     id: "letzteAnfrageAm",
     hubspotName: "letzte_anfrage_am",
@@ -229,6 +232,7 @@ export const FELDER: FeldDefinition[] = [
     fieldType: "date",
     type: "datetime",
     welle: "workflow",
+    group: "custom_information",
   },
   {
     id: "vorherigerStatus",
@@ -238,6 +242,7 @@ export const FELDER: FeldDefinition[] = [
     fieldType: "text",
     type: "string",
     welle: "workflow",
+    group: "custom_information",
   },
   {
     id: "anzahlAnfragen",
@@ -247,6 +252,7 @@ export const FELDER: FeldDefinition[] = [
     fieldType: "number",
     type: "number",
     welle: "workflow",
+    group: "custom_information",
   },
 ]
 
