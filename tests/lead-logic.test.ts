@@ -23,14 +23,14 @@ test("Priorität aus Behandlung", () => {
 
 test("Lead-Wert-Proxy aus Behandlung", () => {
   const erwartet: Record<string, number> = {
-    schnitt_styling: 60,
+    schnitt_styling: 95,
     farbe_ansatz: 80,
     straehnen_blondierung: 150,
-    balayage: 300,
+    balayage: 390,
     grey_blending: 390,
     keratin: 300,
-    beratungsgespraech: 60,
-    weiss_ich_noch_nicht: 60,
+    beratungsgespraech: 95,
+    weiss_ich_noch_nicht: 95,
   }
   for (const [b, wert] of Object.entries(erwartet)) {
     assert.equal(leadWertProxy(b), wert, b)

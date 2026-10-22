@@ -26,3 +26,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Kundenabgleich: Eingabe-Exporte & Ausgaben enthalten Kundendaten – NIE committen.
+/daten/

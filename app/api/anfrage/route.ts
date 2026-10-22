@@ -134,18 +134,26 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
   if (wunschzeitraum) properties.wunschzeitraum = wunschzeitraum
   if (whatsappOk) properties.whatsapp_ok = whatsappOk
   if (nachricht) properties.nachricht_anfrage = nachricht
-  // Kampagnen-Attribution → gleichnamige Properties.
+  // Kampagnen-Attribution → gleichnamige Properties (existieren in HubSpot).
   for (const key of ["gclid", "utm_source", "utm_medium", "utm_campaign"] as const) {
     const v = String(tracking[key] ?? body[key] ?? "").trim()
     if (v) properties[key] = v
   }
-  // gbraid/wbraid/utm_term bewusst NICHT als Property – nur ins Log.
+  // Neue/optionale Attribution nur schreiben, wenn die Property in HubSpot
+  // existiert UND via ENV HUBSPOT_ATTR_EXTRA (kommagetrennt) scharf geschaltet
+  // ist – sonst nur loggen, damit eine fehlende Property die Anfrage NIE
+  // fehlschlagen lässt. Anzulegende Properties: utm_content, fbclid, landingpage, referrer.
+  const attrExtraErlaubt = new Set(
+    (process.env.HUBSPOT_ATTR_EXTRA || "").split(/[;,]/).map((s) => s.trim()).filter(Boolean),
+  )
   const nurLog: Record<string, string> = {}
-  for (const key of ["gbraid", "wbraid", "utm_term"] as const) {
+  for (const key of ["utm_content", "fbclid", "landingpage", "referrer", "gbraid", "wbraid", "utm_term"] as const) {
     const v = String(tracking[key] ?? body[key] ?? "").trim()
-    if (v) nurLog[key] = v
+    if (!v) continue
+    if (attrExtraErlaubt.has(key)) properties[key] = v
+    else nurLog[key] = v
   }
-  if (Object.keys(nurLog).length) console.log("Attribution (nur Log, keine Property):", nurLog)
+  if (Object.keys(nurLog).length) console.log("Attribution (Property fehlt/aus, nur Log):", nurLog)
   // Marketing-Einwilligung nur SETZEN, nie automatisch widerrufen.
   if (einwilligungMarketing) {
     properties.einwilligung_marketing = "true"

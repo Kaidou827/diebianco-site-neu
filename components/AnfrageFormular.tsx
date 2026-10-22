@@ -25,6 +25,10 @@ import type React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import Script from "next/script"
 import { FORMULAR_FELDER, FARB_BEHANDLUNGEN, optionWert, type FeldDefinition } from "@/lib/hubspot/schema"
+import { leadWertProxy } from "@/lib/lead-logic"
+import LeadErfolgTracking from "@/components/LeadErfolgTracking"
+import { leseAttribution, erfasseFirstTouch } from "@/lib/attribution"
+import { PREIS_KLAUSEL_TEXT } from "@/lib/preistexte"
 
 type Phase = "behandlung" | "kontakt" | "b" | "fertig"
 
@@ -54,25 +58,38 @@ const FARB_WERTE = new Set(FARB_BEHANDLUNGEN.map(optionWert))
 const WHATSAPP_JA = optionWert("Ja, gerne")
 const UNSICHER = optionWert("Weiß ich noch nicht")
 
-// Kampagnen-Attribution: First-Touch, in sessionStorage gepuffert.
-const ATTRIB_KEYS = ["gclid", "gbraid", "wbraid", "utm_source", "utm_medium", "utm_campaign", "utm_term"] as const
-const ATTRIB_STORAGE = "db_attribution"
-
-/** Attribution auslesen: sessionStorage bevorzugt (First-Touch), Fallback URL. */
-function leseAttribution(): Record<string, string> {
-  if (typeof window === "undefined") return {}
-  let gespeichert: Record<string, string> = {}
-  try {
-    gespeichert = JSON.parse(sessionStorage.getItem(ATTRIB_STORAGE) || "{}") as Record<string, string>
-  } catch {}
-  const params = new URLSearchParams(window.location.search)
-  const out: Record<string, string> = {}
-  for (const k of ATTRIB_KEYS) {
-    const v = gespeichert[k] || params.get(k) || ""
-    if (v) out[k] = v
-  }
-  return out
+// B4 (hinter NEXT_PUBLIC_FORM_PREISRAHMEN): Behandlung aus ?behandlung=<slug> vorwählen.
+const BEHANDLUNG_AUS_SLUG: Record<string, string> = {
+  "grey-blending": "Grey Blending",
+  balayage: "Balayage",
+  straehnen: "Strähnen / Blondierung",
+  "straehnen-blondierung": "Strähnen / Blondierung",
+  blondierung: "Strähnen / Blondierung",
+  "farbe-ansatz": "Farbe / Ansatz",
+  farbe: "Farbe / Ansatz",
+  ansatz: "Farbe / Ansatz",
+  schnitt: "Schnitt & Styling",
+  "schnitt-styling": "Schnitt & Styling",
+  keratin: "Keratin",
+  beratung: "Beratungsgespräch",
+  beratungsgespraech: "Beratungsgespräch",
 }
+
+// B4: optionales Feld „Wann möchtest du kommen?". Die Werte sind auf die
+// BESTEHENDEN wunschzeitraum-Enum-Optionen (Vormittags/Nachmittags/Samstag/Egal)
+// gemappt, damit beim Einschalten nur gültige Werte in HubSpot landen (keine neue
+// Property-Option nötig). Rein technisches Mapping – die gespeicherte Bezeichnung
+// entspricht nicht der Dringlichkeits-Bedeutung (Folge-Thema: eigene Optionen oder
+// Property „dringlichkeit").
+const KOMMEN_OPTIONEN: Array<{ value: string; label: string }> = [
+  { value: optionWert("Vormittags"), label: "Diese Woche" },
+  { value: optionWert("Nachmittags"), label: "In 2 Wochen" },
+  { value: optionWert("Samstag"), label: "Später" },
+  { value: optionWert("Egal"), label: "Nur informieren" },
+]
+
+// Kampagnen-Attribution: zentral in lib/attribution (First-Touch im Speicher,
+// sessionStorage nur nach Consent). Keys inkl. utm_content, fbclid, landingpage, referrer.
 
 const KURZ: Record<string, string> = {
   wunsch_behandlung: "Behandlung",
@@ -106,6 +123,7 @@ export default function AnfrageFormular({
 }: AnfrageFormularProps) {
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
   const isTurnstileEnabled = turnstileSiteKey.length > 0
+  const preisrahmenAktiv = process.env.NEXT_PUBLIC_FORM_PREISRAHMEN === "true"
   const istDeep = variante === "deep"
   const vorauswahlWert = vorauswahlBehandlung ? optionWert(vorauswahlBehandlung) : ""
   const vorausgewaehlt = Boolean(vorauswahlWert)
@@ -185,24 +203,22 @@ export default function AnfrageFormular({
     return () => io.disconnect()
   }, [])
 
-  // Kampagnen-Parameter beim ersten Kontakt (First-Touch) sichern – vorhandene
-  // Werte werden nicht überschrieben.
+  // First-Touch-Fallback beim Formular-Mount (global übernimmt AttributionTracker im Layout).
   useEffect(() => {
-    if (typeof window === "undefined") return
-    try {
-      const params = new URLSearchParams(window.location.search)
-      const gespeichert = JSON.parse(sessionStorage.getItem(ATTRIB_STORAGE) || "{}") as Record<string, string>
-      let geaendert = false
-      for (const k of ATTRIB_KEYS) {
-        const v = params.get(k)
-        if (v && !gespeichert[k]) {
-          gespeichert[k] = v
-          geaendert = true
-        }
-      }
-      if (geaendert) sessionStorage.setItem(ATTRIB_STORAGE, JSON.stringify(gespeichert))
-    } catch {}
+    erfasseFirstTouch()
   }, [])
+
+  // B4: Behandlung aus ?behandlung=<slug> vorwählen (nur mit Flag, ohne Server-Vorauswahl).
+  useEffect(() => {
+    if (!preisrahmenAktiv || vorausgewaehlt) return
+    if (typeof window === "undefined") return
+    const slug = new URLSearchParams(window.location.search).get("behandlung")?.toLowerCase().trim()
+    if (!slug) return
+    const label = BEHANDLUNG_AUS_SLUG[slug]
+    if (!label) return
+    setDaten((d) => ({ ...d, wunsch_behandlung: optionWert(label) }))
+    setPhase("kontakt")
+  }, [preisrahmenAktiv, vorausgewaehlt])
 
   const set = (name: string, value: string) => setDaten((d) => ({ ...d, [name]: value }))
 
@@ -217,6 +233,20 @@ export default function AnfrageFormular({
   }
 
   const zumAbschluss = () => {
+    // Lead-Erfolgs-Event vorbereiten – LeadErfolgTracking feuert es einmalig
+    // (auf /kontakt/danke nach Redirect bzw. inline in der Fertig-Phase).
+    try {
+      const attr = leseAttribution()
+      const payload = {
+        behandlung: daten.wunsch_behandlung || "",
+        lead_wert: leadWertProxy(daten.wunsch_behandlung || ""),
+        quelle_seite: typeof window !== "undefined" ? window.location.pathname : "",
+        utm_source: attr.utm_source || "",
+        utm_campaign: attr.utm_campaign || "",
+      }
+      sessionStorage.setItem("db_lead_event", JSON.stringify(payload))
+    } catch {}
+
     if (dankeUrl) {
       const name = encodeURIComponent(daten.firstname.trim())
       window.location.assign(`${dankeUrl}${dankeUrl.includes("?") ? "&" : "?"}name=${name}`)
@@ -456,6 +486,13 @@ export default function AnfrageFormular({
                 </div>
               )}
 
+              {preisrahmenAktiv && daten.wunsch_behandlung && (
+                <div className="db-label" style={{ gap: 4 }}>
+                  <span style={{ fontWeight: 600 }}>Richtwert: ab {leadWertProxy(daten.wunsch_behandlung)} €</span>
+                  <span className="db-optional" style={{ fontSize: 12, lineHeight: 1.5 }}>{PREIS_KLAUSEL_TEXT}</span>
+                </div>
+              )}
+
               <p className="db-legende">Wohin dürfen wir uns melden?</p>
               <div className="db-namen">
                 <label className="db-label">
@@ -516,7 +553,7 @@ export default function AnfrageFormular({
                 />
               </label>
 
-              {variante === "standard" && ZEITRAUM_FELD?.optionen && (
+              {variante === "standard" && !preisrahmenAktiv && ZEITRAUM_FELD?.optionen && (
                 <div className="db-label">
                   <span>Wann passt es dir? <span className="db-optional">(optional)</span></span>
                   <div className="db-chips">
@@ -531,6 +568,27 @@ export default function AnfrageFormular({
                           onClick={() => set("wunschzeitraum", aktiv ? "" : wert)}
                         >
                           {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {preisrahmenAktiv && (
+                <div className="db-label">
+                  <span>Wann möchtest du kommen? <span className="db-optional">(optional)</span></span>
+                  <div className="db-chips">
+                    {KOMMEN_OPTIONEN.map((o) => {
+                      const aktiv = daten.wunschzeitraum === o.value
+                      return (
+                        <button
+                          key={o.value}
+                          type="button"
+                          className={`db-chip${aktiv ? " db-chip-aktiv" : ""}`}
+                          onClick={() => set("wunschzeitraum", aktiv ? "" : o.value)}
+                        >
+                          {o.label}
                         </button>
                       )
                     })}
@@ -608,6 +666,7 @@ export default function AnfrageFormular({
               <div className="db-fertig-haken">✓</div>
               <p className="db-fertig-titel">Danke, {daten.firstname || "und bis gleich"} 💛</p>
               <p className="db-fertig-text">{zusage}. Du hörst zeitnah von uns.</p>
+              <LeadErfolgTracking />
             </div>
           )}
         </div>
