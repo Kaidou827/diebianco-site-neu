@@ -32,9 +32,9 @@ export interface FeldDefinition {
   /** Optionaler Hilfetext unter der Frage. */
   hinweis?: string
   /** Darstellungstyp im Formular / in HubSpot. */
-  fieldType: "select" | "radio" | "textarea" | "file" | "text"
+  fieldType: "select" | "radio" | "textarea" | "file" | "text" | "number" | "date"
   /** HubSpot-Datentyp. */
-  type: "enumeration" | "string"
+  type: "enumeration" | "string" | "number" | "datetime"
   /** Auswahloptionen (nur bei enumeration). Reihenfolge = Anzeigereihenfolge. */
   optionen?: string[]
   /** Wann das Feld befüllt wird. */
@@ -217,6 +217,35 @@ export const FELDER: FeldDefinition[] = [
     fieldType: "select",
     type: "enumeration",
     optionen: ["Neu", "Kontaktiert", "Nicht erreicht", "Termin vereinbart", "Kein Interesse"],
+    welle: "workflow",
+  },
+
+  // ── Wiederkehrende Anfragen (vom Backend gesetzt) ──────────────────────────
+  {
+    id: "letzteAnfrageAm",
+    hubspotName: "letzte_anfrage_am",
+    label: "Letzte Anfrage am",
+    frage: "",
+    fieldType: "date",
+    type: "datetime",
+    welle: "workflow",
+  },
+  {
+    id: "vorherigerStatus",
+    hubspotName: "vorheriger_status",
+    label: "Vorheriger Status",
+    frage: "",
+    fieldType: "text",
+    type: "string",
+    welle: "workflow",
+  },
+  {
+    id: "anzahlAnfragen",
+    hubspotName: "anzahl_anfragen",
+    label: "Anzahl Anfragen",
+    frage: "",
+    fieldType: "number",
+    type: "number",
     welle: "workflow",
   },
 ]
