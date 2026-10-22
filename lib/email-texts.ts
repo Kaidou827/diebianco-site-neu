@@ -133,7 +133,7 @@ export interface BestaetigungDaten {
 }
 
 const PREIS_ZEILEN = [
-  "Damenschnitt 95 €",
+  "Damenschnitt ab 95 €",
   "Ansatzfarbe ab 80 €",
   "Glossing ab 80 €",
   "Strähnen ab 150 €",
