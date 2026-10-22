@@ -254,6 +254,16 @@ export const FELDER: FeldDefinition[] = [
     welle: "workflow",
     group: "custom_information",
   },
+  {
+    id: "keinInteresseSeit",
+    hubspotName: "kein_interesse_seit",
+    label: "Kein Interesse seit",
+    frage: "",
+    fieldType: "date",
+    type: "datetime",
+    welle: "workflow",
+    group: "custom_information",
+  },
 ]
 
 /**

@@ -59,11 +59,12 @@ test("terminStatusAufgabeFaellig", () => {
 })
 
 // ── Archivierung (kein_interesse ≥ 90 Tage) ──────────────────────────────────
-test("sollArchivieren", () => {
-  assert.equal(sollArchivieren({ status: "kein_interesse", lastmodMs: NOW - 91 * D, nowMs: NOW }), true)
-  assert.equal(sollArchivieren({ status: "kein_interesse", lastmodMs: NOW - 80 * D, nowMs: NOW }), false)
-  assert.equal(sollArchivieren({ status: "neu", lastmodMs: NOW - 91 * D, nowMs: NOW }), false)
-  assert.equal(sollArchivieren({ status: "kein_interesse", lastmodMs: null, nowMs: NOW }), false)
+test("sollArchivieren (Anker kein_interesse_seit ≥ 90 Tage)", () => {
+  assert.equal(sollArchivieren({ status: "kein_interesse", keinInteresseSeitMs: NOW - 91 * D, nowMs: NOW }), true)
+  assert.equal(sollArchivieren({ status: "kein_interesse", keinInteresseSeitMs: NOW - 80 * D, nowMs: NOW }), false)
+  assert.equal(sollArchivieren({ status: "neu", keinInteresseSeitMs: NOW - 91 * D, nowMs: NOW }), false)
+  // ohne Anker: NICHT archivieren (wird im Cron zuerst gestempelt)
+  assert.equal(sollArchivieren({ status: "kein_interesse", keinInteresseSeitMs: null, nowMs: NOW }), false)
 })
 
 // ── Reaktivierung ────────────────────────────────────────────────────────────

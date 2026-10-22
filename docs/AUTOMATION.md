@@ -61,6 +61,7 @@ Detailfragen als **Welle 2** – je Antwort ein PATCH auf die Kontakt-ID.
 | `letzte_anfrage_am` | Zeitpunkt der (letzten) Anfrage (Unix-ms) | `1800…` |
 | `anzahl_anfragen` | Zähler, +1 je Anfrage außerhalb des 5-Min-Fensters | `3` |
 | `vorheriger_status` | Status vor dem Reset (leer bei Erstanfrage) | `kein_interesse` |
+| `kein_interesse_seit` | Archiv-Anker; vom Cron beim 1. Antreffen von `kein_interesse` gestempelt, bei Statuswechsel geleert | `1800…` |
 
 > Datum/Zeit-Properties werden als **Unix-Millisekunden** gesendet.
 > `einwilligung_marketing` wird **nie automatisch auf false** gesetzt (kein
@@ -96,8 +97,9 @@ egal welchen `lead_status_intern` sie vorher hatte (auch `termin_vereinbart`,
 Wechselwirkung mit den Crons: **Digest** sortiert nach `letzte_anfrage_am`
 (neueste zuerst). **Reaktivierung** misst „alt ≥ 30 Tage" an `letzte_anfrage_am`
 → gerade Wiedergekommene bekommen keine Reaktivierungsmail. **Archivierung**
-greift nur bei `kein_interesse` + `hs_lastmodifieddate ≥ 90 Tage` – eine
-Re-Anfrage setzt Status auf `neu` und lastmod auf jetzt, fällt also raus.
+greift nur bei `kein_interesse` + `kein_interesse_seit ≥ 90 Tage` – eine
+Re-Anfrage setzt Status auf `neu` und **leert `kein_interesse_seit`**, fällt
+also raus.
 
 Logik: `lib/wiederkehr.ts` (`berechneWiederkehr`, rein + getestet).
 Einmal-Backfill für Bestandskontakte: `pnpm backfill:letzte-anfrage` (Dry-Run Standard).
@@ -211,7 +213,7 @@ werden als **Unix-Millisekunden** geschrieben.
 | Nicht erreicht | `/api/cron/nicht-erreicht` | tägl. 10:00 | 08:00 / 09:00 | `nicht_erreicht`, ≥48 h seit `nicht_erreicht_seit`, Zähler-Stufen 1→2 |
 | Termine | `/api/cron/termine` | tägl. 09:00 | 07:00 / 08:00 | `termin_vereinbart` + `termin_datum`, Termin ≥2 Tage her → **Status-Aufgabe** für Teresa (keine Termin-Mails mehr) |
 | Reaktivierung | `/api/cron/reaktivierung` | Mo 09:30 | 07:30 / 08:30 | `einwilligung_marketing`, `letzte_anfrage_am` (Fallback createdate) ≥30 Tage, offener Status |
-| Archiv | `/api/cron/archiv` | Mo 08:00 | 06:00 / 07:00 | `kein_interesse`, letzte Änderung ≥90 Tage → `archiv` (kein Löschen) |
+| Archiv | `/api/cron/archiv` | Mo 08:00 | 06:00 / 07:00 | `kein_interesse`: Anker `kein_interesse_seit` beim 1. Antreffen stempeln, dann ≥90 Tage → `archiv` (kein Löschen) |
 
 > **Winterzeit:** UTC-Crons verschieben sich nicht – im Winter laufen die Jobs
 > eine Stunde früher (Berlin). Das ist unkritisch, weil die Jobs Wochentag/
@@ -263,6 +265,15 @@ werden als **Unix-Millisekunden** geschrieben.
   (wenn leer); 48 h / 5 Tage zählen ab diesem Stempel (nicht ab `hs_lastmodifieddate`).
   Wechselt der Status weg von `nicht_erreicht`, leert der Job den Anker und setzt
   `nicht_erreicht_mails_gesendet` auf 0.
+- `kein_interesse_seit` (datetime) – **aktiv**: Anker für den Archiv-Cron. Der Job
+  stempelt sie beim ersten Antreffen von `lead_status_intern=kein_interesse` (wenn
+  leer); die 90 Tage bis `archiv` zählen ab diesem Stempel (nicht ab
+  `hs_lastmodifieddate`, das jede unbeteiligte Bearbeitung zurücksetzen würde).
+  Wechselt der Status weg von `kein_interesse` – manuell oder per Wiederkehr über
+  `/api/anfrage` – wird der Anker geleert.
+  > **Erstlauf-Hinweis:** Bereits bestehende `kein_interesse`-Kontakte werden beim
+  > ersten Lauf auf das aktuelle Datum gestempelt, archivieren also frühestens
+  > 90 Tage nach Deploy.
 - `termin_bestaetigung_gesendet`, `termin_erinnerung_gesendet`, `review_mail_gesendet`
   bleiben im Portal, werden aber **nicht mehr im Code geschrieben** (Termin-Mails und
   Bewertungsbitte entfernt, Stand 30.09.2026).
