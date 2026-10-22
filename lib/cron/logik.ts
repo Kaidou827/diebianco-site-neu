@@ -42,14 +42,20 @@ export interface DigestZeile {
   id: string
   prioritaet: string | null | undefined
   createdateMs: number | null
+  /** letzte_anfrage_am (ms); Fallback createdate. Sortieranker. */
+  letzteAnfrageMs?: number | null
 }
 
-/** Digest-Sortierung: Priorität hoch→mittel→niedrig, dann createdate aufsteigend. */
+/**
+ * Digest-Sortierung: Priorität hoch→mittel→niedrig, dann `letzte_anfrage_am`
+ * ABSTEIGEND (Fallback createdate) – neueste (Wieder-)Anfrage zuerst.
+ */
 export function sortiereDigest<T extends DigestZeile>(zeilen: T[]): T[] {
+  const anker = (z: T) => z.letzteAnfrageMs ?? z.createdateMs ?? 0
   return [...zeilen].sort((a, b) => {
     const r = prioRang(a.prioritaet) - prioRang(b.prioritaet)
     if (r !== 0) return r
-    return (a.createdateMs ?? 0) - (b.createdateMs ?? 0)
+    return anker(b) - anker(a)
   })
 }
 

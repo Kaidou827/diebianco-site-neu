@@ -93,12 +93,18 @@ export async function runDigest(opts: JobOptionen): Promise<JobErgebnis> {
     ],
     properties: [
       "firstname", "wunsch_behandlung", "wunschzeitraum", "phone",
-      "nachricht_anfrage", "prioritaet", "createdate", "lead_status_intern",
+      "nachricht_anfrage", "prioritaet", "createdate", "lead_status_intern", "letzte_anfrage_am",
     ],
   })
 
   const sortiert = sortiereDigest(
-    zeilen.map((z) => ({ id: z.id, prioritaet: prop(z, "prioritaet"), createdateMs: parseHubspotMs(prop(z, "createdate")), zeile: z })),
+    zeilen.map((z) => ({
+      id: z.id,
+      prioritaet: prop(z, "prioritaet"),
+      createdateMs: parseHubspotMs(prop(z, "createdate")),
+      letzteAnfrageMs: parseHubspotMs(prop(z, "letzte_anfrage_am")),
+      zeile: z,
+    })),
   )
 
   if (sortiert.length === 0) {
@@ -106,12 +112,12 @@ export async function runDigest(opts: JobOptionen): Promise<JobErgebnis> {
     return leer("digest", opts.dryRun)
   }
 
-  const mailZeilen: DigestMailZeile[] = sortiert.map(({ zeile, createdateMs }) => ({
+  const mailZeilen: DigestMailZeile[] = sortiert.map(({ zeile, createdateMs, letzteAnfrageMs }) => ({
     vorname: prop(zeile, "firstname") || "—",
     behandlung: behandlungLabel(prop(zeile, "wunsch_behandlung")),
     zeitraum: zeitraumLabel(prop(zeile, "wunschzeitraum")),
     telefon: prop(zeile, "phone") || "—",
-    tage: tageSeit(createdateMs, now.getTime()),
+    tage: tageSeit(letzteAnfrageMs ?? createdateMs, now.getTime()),
     nachricht: kuerze(prop(zeile, "nachricht_anfrage"), 80),
     deepLink: kontaktDeepLink(zeile.id),
   }))
