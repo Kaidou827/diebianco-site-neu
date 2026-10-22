@@ -297,6 +297,7 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
           timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short",
         }).format(jetzt),
         deepLink: contactId ? kontaktDeepLink(contactId) : "(Kontakt konnte nicht in HubSpot gespeichert werden)",
+        hinweise: wiederHinweise,
       }),
     })
   } catch (mailErr) {
