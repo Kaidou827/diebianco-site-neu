@@ -112,17 +112,22 @@ export interface ReaktivierungEingabe {
   einwilligung: boolean
   status: string
   createdateMs: number | null
+  /** letzte_anfrage_am (ms); Fallback createdate. Verhindert Reaktivierung gerade Wiedergekommener. */
+  letzteAnfrageMs?: number | null
   reaktivierungGesendet: boolean
   nowMs: number
 }
 
 export function sollReaktivieren(e: ReaktivierungEingabe): boolean {
+  // „alt ≥ 30 Tage" bezieht sich auf die LETZTE Anfrage (Fallback createdate),
+  // damit eine gerade erneut eingereichte Kundin KEINE Reaktivierungsmail bekommt.
+  const anker = e.letzteAnfrageMs ?? e.createdateMs
   return (
     e.einwilligung &&
     REAKT_STATUS.has(e.status) &&
     !e.reaktivierungGesendet &&
-    e.createdateMs != null &&
-    e.nowMs - e.createdateMs >= 30 * MS_TAG
+    anker != null &&
+    e.nowMs - anker >= 30 * MS_TAG
   )
 }
 

@@ -354,7 +354,7 @@ export async function runReaktivierung(opts: JobOptionen): Promise<JobErgebnis> 
         ],
       },
     ],
-    properties: ["firstname", "email", "createdate", "lead_status_intern", "einwilligung_marketing", "reaktivierung_gesendet"],
+    properties: ["firstname", "email", "createdate", "lead_status_intern", "einwilligung_marketing", "reaktivierung_gesendet", "letzte_anfrage_am"],
   })
 
   const farbSaison = [9, 10, 11].includes(berlinMonat(now))
@@ -365,6 +365,7 @@ export async function runReaktivierung(opts: JobOptionen): Promise<JobErgebnis> 
       einwilligung: prop(z, "einwilligung_marketing") === "true",
       status: prop(z, "lead_status_intern"),
       createdateMs: parseHubspotMs(prop(z, "createdate")),
+      letzteAnfrageMs: parseHubspotMs(prop(z, "letzte_anfrage_am")),
       reaktivierungGesendet: Boolean(prop(z, "reaktivierung_gesendet")),
       nowMs: now.getTime(),
     })
