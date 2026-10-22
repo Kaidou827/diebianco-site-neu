@@ -75,12 +75,17 @@ const BEHANDLUNG_AUS_SLUG: Record<string, string> = {
   beratungsgespraech: "Beratungsgespräch",
 }
 
-// B4: optionales Feld „Wann möchtest du kommen?" (schreibt vorerst wunschzeitraum).
+// B4: optionales Feld „Wann möchtest du kommen?". Die Werte sind auf die
+// BESTEHENDEN wunschzeitraum-Enum-Optionen (Vormittags/Nachmittags/Samstag/Egal)
+// gemappt, damit beim Einschalten nur gültige Werte in HubSpot landen (keine neue
+// Property-Option nötig). Rein technisches Mapping – die gespeicherte Bezeichnung
+// entspricht nicht der Dringlichkeits-Bedeutung (Folge-Thema: eigene Optionen oder
+// Property „dringlichkeit").
 const KOMMEN_OPTIONEN: Array<{ value: string; label: string }> = [
-  { value: "diese_woche", label: "Diese Woche" },
-  { value: "zwei_wochen", label: "In 2 Wochen" },
-  { value: "spaeter", label: "Später" },
-  { value: "nur_info", label: "Nur informieren" },
+  { value: optionWert("Vormittags"), label: "Diese Woche" },
+  { value: optionWert("Nachmittags"), label: "In 2 Wochen" },
+  { value: optionWert("Samstag"), label: "Später" },
+  { value: optionWert("Egal"), label: "Nur informieren" },
 ]
 
 // Kampagnen-Attribution: zentral in lib/attribution (First-Touch im Speicher,
