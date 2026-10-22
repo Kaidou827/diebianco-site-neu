@@ -75,6 +75,12 @@ function parseHubspotDatetime(wert: string | null | undefined): number | null {
   return Number.isNaN(alsDatum) ? null : alsDatum
 }
 
+/** Ganzzahl aus einer HubSpot-Zahl-Property (leer/ungültig → 0). */
+function parseGanzzahl(wert: string | null | undefined): number {
+  const n = Number(String(wert ?? "").replace(/[^\d-]/g, ""))
+  return Number.isFinite(n) ? n : 0
+}
+
 // ── Welle 1: Kontakt anlegen/aktualisieren + Aufgabe + Mails ─────────────────
 async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<NextResponse> {
   const firstname = String(body.firstname || "").trim()
@@ -160,27 +166,78 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
     properties.einwilligung_zeitpunkt = String(jetzt.getTime())
   }
 
-  // ── Upsert + Idempotenz ──
+  // ── Upsert + Idempotenz + Wiederkehr-Erkennung ──
   let contactId: string | null = null
   let istDuplikat = false
+  let wiederkehrend = false
+  let vorherigerStatus = ""
+  let anzahlAnfragen = 1
+  let terminDatumMs: number | null = null
   try {
     if (!hubspotKonfiguriert()) throw new Error("HUBSPOT_PRIVATE_APP_TOKEN fehlt.")
     const vorhandeneId = await sucheKontaktId(email)
     if (vorhandeneId) {
-      const alt = await leseKontakt(vorhandeneId, ["eingangsbestaetigung_gesendet", "lead_status_intern"])
+      const alt = await leseKontakt(vorhandeneId, [
+        "eingangsbestaetigung_gesendet",
+        "lead_status_intern",
+        "termin_datum",
+        "anzahl_anfragen",
+      ])
       const letzte = parseHubspotDatetime(alt.eingangsbestaetigung_gesendet)
       if (letzte && jetzt.getTime() - letzte < IDEMPOTENZ_MS) istDuplikat = true
-      // Bestehenden internen Status niemals überschreiben.
-      if (!alt.lead_status_intern) properties.lead_status_intern = "neu"
+      terminDatumMs = parseHubspotDatetime(alt.termin_datum)
+
+      // Außerhalb des 5-Min-Fensters: erneute Anfrage → wieder als „neu" behandeln,
+      // egal welchen lead_status_intern die Kundin vorher hatte.
+      if (!istDuplikat) {
+        // „Wiederkehrend" nur, wenn es vorher einen Status gab ODER die letzte
+        // Bestätigung älter als das Idempotenzfenster ist. Ein frischer Rumpf-
+        // Kontakt aus der Formular-Erfassung (kein Status, keine Bestätigung) zählt NICHT.
+        wiederkehrend =
+          Boolean(alt.lead_status_intern) || (letzte != null && jetzt.getTime() - letzte >= IDEMPOTENZ_MS)
+        vorherigerStatus = alt.lead_status_intern || ""
+        anzahlAnfragen = parseGanzzahl(alt.anzahl_anfragen) + 1
+        properties.lead_status_intern = "neu"
+        properties.letzte_anfrage_am = String(jetzt.getTime())
+        properties.anzahl_anfragen = String(anzahlAnfragen)
+        properties.vorheriger_status = vorherigerStatus
+        // Nicht-erreicht-Zähler/Anker zurücksetzen, Termin-Status-Aufgabe wieder scharf.
+        properties.nicht_erreicht_mails_gesendet = "0"
+        properties.nicht_erreicht_seit = ""
+        properties.termin_status_aufgabe_gesendet = ""
+        // termin_datum bleibt UNANGETASTET.
+      }
       await aktualisiereKontakt(vorhandeneId, properties)
       contactId = vorhandeneId
     } else {
       properties.lead_status_intern = "neu"
+      properties.letzte_anfrage_am = String(jetzt.getTime())
+      properties.anzahl_anfragen = "1"
       contactId = await erstelleKontakt(properties)
     }
   } catch (err) {
     // HubSpot-Fehler dürfen den Lead nicht verschlucken → Salon-Mail folgt unten.
     console.error("Welle 1: HubSpot-Upsert fehlgeschlagen:", err)
+  }
+
+  // Hinweise für wiederkehrende Kundinnen (für Rückruf-Aufgabe + Salon-Mail).
+  const wiederHinweise: string[] = []
+  if (wiederkehrend) {
+    wiederHinweise.push(
+      `Wiederkehrende Kundin – vorheriger Status: ${vorherigerStatus || "—"}, Anfrage Nr. ${anzahlAnfragen}`,
+    )
+    if (terminDatumMs && terminDatumMs > jetzt.getTime()) {
+      const terminStr = new Intl.DateTimeFormat("de-DE", {
+        timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short",
+      }).format(new Date(terminDatumMs))
+      wiederHinweise.push(
+        `Achtung: Termin am ${terminStr} ist bereits eingetragen – geht es um Verschieben oder eine Zusatzleistung?`,
+      )
+    }
+    // Hinweis auf mögliche offene Rückruf-Aufgabe (generisch – ohne Task-Suche per Association).
+    if (["neu", "nicht_erreicht", "kontaktiert"].includes(vorherigerStatus)) {
+      wiederHinweise.push("Hinweis: evtl. noch eine offene Rückruf-Aufgabe vorhanden – bitte eine davon schließen.")
+    }
   }
 
   // Bei erkanntem Duplikat: keine zweite Aufgabe, keine zweite Mail.
@@ -203,6 +260,7 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
     // WhatsApp-Entwurf für Teresas manuelle Terminbestätigung (nur mit gültiger Nummer).
     const waTermin = waTerminBestaetigungLink({ vorname: firstname, behandlungLabel: behandlung, phoneE164 })
     const aufgabeBody = [
+      ...(wiederHinweise.length ? [...wiederHinweise, ""] : []),
       `Telefon: ${phoneE164 || phoneRoh}`,
       `WhatsApp: ${wa}`,
       `Nachricht: ${nachricht || "—"}`,
@@ -213,7 +271,7 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
 
     const aufgabe = await erstelleAufgabe({
       contactId,
-      subject: `Rückruf: ${firstname} – ${behandlung} – Wunsch: ${zeitraum}`,
+      subject: `${wiederkehrend ? "Wieder da: " : ""}Rückruf: ${firstname} – ${behandlung} – Wunsch: ${zeitraum}`,
       body: aufgabeBody.join("\n"),
       timestampMs: faellig,
       // Erinnerung zur Fälligkeit → Teresa bekommt einen Push.
