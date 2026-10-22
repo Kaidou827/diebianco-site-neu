@@ -83,6 +83,7 @@ export function berechneWiederkehr(e: WiederkehrEingabe): WiederkehrErgebnis {
     properties.nicht_erreicht_mails_gesendet = "0"
     properties.nicht_erreicht_seit = ""
     properties.termin_status_aufgabe_gesendet = ""
+    properties.kein_interesse_seit = "" // Archiv-Anker zurücksetzen (Status wird „neu")
     // termin_datum wird bewusst NICHT gesetzt (bleibt erhalten).
   }
 

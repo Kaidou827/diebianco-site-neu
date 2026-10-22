@@ -45,6 +45,7 @@ test("bestehend mit kein_interesse: wiederkehrend, Status zurück auf neu, Reset
   assert.equal(r.properties.nicht_erreicht_mails_gesendet, "0")
   assert.equal(r.properties.nicht_erreicht_seit, "")
   assert.equal(r.properties.termin_status_aufgabe_gesendet, "")
+  assert.equal(r.properties.kein_interesse_seit, "") // Archiv-Anker zurückgesetzt
   assert.equal(r.offeneAufgabeMoeglich, false) // kein_interesse ist kein Rückruf-Status
 })
 

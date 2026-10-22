@@ -300,25 +300,64 @@ export async function runTermine(opts: JobOptionen): Promise<JobErgebnis> {
 // ── Job 5: Archivierung alter „kein Interesse"-Kontakte (wöchentlich) ────────
 export async function runArchivierung(opts: JobOptionen): Promise<JobErgebnis> {
   const now = opts.now ?? new Date()
-  const cutoff = now.getTime() - 90 * 24 * 60 * 60 * 1000
-  const zeilen = await sucheKontakteAlle({
+  const erg = leer("archiv", opts.dryRun)
+
+  // Reset-Pass: Anker leeren, wenn der Status nicht mehr kein_interesse ist
+  // (z. B. manueller Statuswechsel im CRM; die Wiederkehr-Logik leert ihn bereits).
+  const zurueckzusetzen = await sucheKontakteAlle({
     filterGroups: [
       {
         filters: [
-          { propertyName: "lead_status_intern", operator: "EQ", value: "kein_interesse" },
-          { propertyName: "hs_lastmodifieddate", operator: "LTE", value: String(cutoff) },
+          { propertyName: "kein_interesse_seit", operator: "HAS_PROPERTY" },
+          { propertyName: "lead_status_intern", operator: "NEQ", value: "kein_interesse" },
         ],
       },
     ],
-    properties: ["firstname", "lead_status_intern", "hs_lastmodifieddate"],
+    properties: ["lead_status_intern", "kein_interesse_seit"],
+  })
+  for (const z of zurueckzusetzen) {
+    erg.geprueft++
+    if (opts.dryRun) { erg.uebersprungen++; continue }
+    try {
+      await aktualisiereKontakt(z.id, { kein_interesse_seit: "" })
+      erg.uebersprungen++
+    } catch (err) {
+      console.error(`[archiv/reset] Kontakt ${z.id} fehlgeschlagen:`, err)
+      erg.fehler++
+    }
+  }
+
+  // Haupt-Pass: alle kein_interesse-Kontakte. Ohne Anker → jetzt stempeln (90 Tage
+  // ab Stempel); mit Anker ≥ 90 Tage → archivieren.
+  const zeilen = await sucheKontakteAlle({
+    filterGroups: [
+      { filters: [{ propertyName: "lead_status_intern", operator: "EQ", value: "kein_interesse" }] },
+    ],
+    properties: ["firstname", "lead_status_intern", "kein_interesse_seit"],
   })
 
-  const erg = leer("archiv", opts.dryRun)
   for (const z of zeilen) {
     erg.geprueft++
+    const ankerMs = parseHubspotMs(prop(z, "kein_interesse_seit"))
+
+    // Noch kein Anker → jetzt stempeln; diese Runde NICHT archivieren.
+    if (ankerMs == null) {
+      if (!opts.dryRun) {
+        try {
+          await aktualisiereKontakt(z.id, { kein_interesse_seit: String(now.getTime()) })
+        } catch (err) {
+          console.error(`[archiv/stempel] Kontakt ${z.id} fehlgeschlagen:`, err)
+          erg.fehler++
+          continue
+        }
+      }
+      erg.uebersprungen++
+      continue
+    }
+
     const ok = sollArchivieren({
       status: prop(z, "lead_status_intern"),
-      lastmodMs: parseHubspotMs(prop(z, "hs_lastmodifieddate")),
+      keinInteresseSeitMs: ankerMs,
       nowMs: now.getTime(),
     })
     if (!ok) { erg.uebersprungen++; continue }

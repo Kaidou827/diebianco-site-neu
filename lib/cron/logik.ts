@@ -134,12 +134,15 @@ export function sollReaktivieren(e: ReaktivierungEingabe): boolean {
 // ── Archivierung (kein_interesse ≥ 90 Tage) ──────────────────────────────────
 export interface ArchivEingabe {
   status: string
-  /** letzte Änderung = `hs_lastmodifieddate`. */
-  lastmodMs: number | null
+  /**
+   * Anker: seit wann der Kontakt `kein_interesse` ist (`kein_interesse_seit`, ms).
+   * Immun gegen unbeteiligte Bearbeitungen (anders als `hs_lastmodifieddate`).
+   */
+  keinInteresseSeitMs: number | null
   nowMs: number
 }
 
-/** Auf `archiv` setzen: Status `kein_interesse` und letzte Änderung ≥ 90 Tage her. */
+/** Auf `archiv` setzen: Status `kein_interesse` und Anker ≥ 90 Tage her. */
 export function sollArchivieren(e: ArchivEingabe): boolean {
-  return e.status === "kein_interesse" && e.lastmodMs != null && e.nowMs - e.lastmodMs >= 90 * MS_TAG
+  return e.status === "kein_interesse" && e.keinInteresseSeitMs != null && e.nowMs - e.keinInteresseSeitMs >= 90 * MS_TAG
 }
