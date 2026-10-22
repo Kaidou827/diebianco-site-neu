@@ -10,7 +10,7 @@
     "sync:hubspot": "tsx scripts/sync-properties.ts",
     "backfill:letzte-anfrage": "tsx scripts/backfill-letzte-anfrage.ts",
     "kundenabgleich": "tsx scripts/kundenabgleich.ts",
-    "test": "tsx --test tests/lead-logic.test.ts tests/faelligkeit.test.ts tests/cron-logik.test.ts tests/hubspot-aufgabe.test.ts tests/whatsapp.test.ts tests/email-texts.test.ts tests/jobs.test.ts tests/kundenabgleich.test.ts",
+    "test": "tsx --test tests/lead-logic.test.ts tests/faelligkeit.test.ts tests/cron-logik.test.ts tests/hubspot-aufgabe.test.ts tests/whatsapp.test.ts tests/email-texts.test.ts tests/jobs.test.ts tests/kundenabgleich.test.ts tests/wiederkehr.test.ts",
     "test:anfrage": "tsx scripts/test-anfrage.ts"
   },
   "dependencies": {
