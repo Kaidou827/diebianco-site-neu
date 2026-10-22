@@ -28,6 +28,7 @@ import { FORMULAR_FELDER, FARB_BEHANDLUNGEN, optionWert, type FeldDefinition } f
 import { leadWertProxy } from "@/lib/lead-logic"
 import LeadErfolgTracking from "@/components/LeadErfolgTracking"
 import { leseAttribution, erfasseFirstTouch } from "@/lib/attribution"
+import { PREIS_KLAUSEL_TEXT } from "@/lib/preistexte"
 
 type Phase = "behandlung" | "kontakt" | "b" | "fertig"
 
@@ -56,6 +57,31 @@ const WHATSAPP_FELD = FORMULAR_FELDER.find((f) => f.hubspotName === "whatsapp_ok
 const FARB_WERTE = new Set(FARB_BEHANDLUNGEN.map(optionWert))
 const WHATSAPP_JA = optionWert("Ja, gerne")
 const UNSICHER = optionWert("Weiß ich noch nicht")
+
+// B4 (hinter NEXT_PUBLIC_FORM_PREISRAHMEN): Behandlung aus ?behandlung=<slug> vorwählen.
+const BEHANDLUNG_AUS_SLUG: Record<string, string> = {
+  "grey-blending": "Grey Blending",
+  balayage: "Balayage",
+  straehnen: "Strähnen / Blondierung",
+  "straehnen-blondierung": "Strähnen / Blondierung",
+  blondierung: "Strähnen / Blondierung",
+  "farbe-ansatz": "Farbe / Ansatz",
+  farbe: "Farbe / Ansatz",
+  ansatz: "Farbe / Ansatz",
+  schnitt: "Schnitt & Styling",
+  "schnitt-styling": "Schnitt & Styling",
+  keratin: "Keratin",
+  beratung: "Beratungsgespräch",
+  beratungsgespraech: "Beratungsgespräch",
+}
+
+// B4: optionales Feld „Wann möchtest du kommen?" (schreibt vorerst wunschzeitraum).
+const KOMMEN_OPTIONEN: Array<{ value: string; label: string }> = [
+  { value: "diese_woche", label: "Diese Woche" },
+  { value: "zwei_wochen", label: "In 2 Wochen" },
+  { value: "spaeter", label: "Später" },
+  { value: "nur_info", label: "Nur informieren" },
+]
 
 // Kampagnen-Attribution: zentral in lib/attribution (First-Touch im Speicher,
 // sessionStorage nur nach Consent). Keys inkl. utm_content, fbclid, landingpage, referrer.
@@ -92,6 +118,7 @@ export default function AnfrageFormular({
 }: AnfrageFormularProps) {
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""
   const isTurnstileEnabled = turnstileSiteKey.length > 0
+  const preisrahmenAktiv = process.env.NEXT_PUBLIC_FORM_PREISRAHMEN === "true"
   const istDeep = variante === "deep"
   const vorauswahlWert = vorauswahlBehandlung ? optionWert(vorauswahlBehandlung) : ""
   const vorausgewaehlt = Boolean(vorauswahlWert)
@@ -175,6 +202,18 @@ export default function AnfrageFormular({
   useEffect(() => {
     erfasseFirstTouch()
   }, [])
+
+  // B4: Behandlung aus ?behandlung=<slug> vorwählen (nur mit Flag, ohne Server-Vorauswahl).
+  useEffect(() => {
+    if (!preisrahmenAktiv || vorausgewaehlt) return
+    if (typeof window === "undefined") return
+    const slug = new URLSearchParams(window.location.search).get("behandlung")?.toLowerCase().trim()
+    if (!slug) return
+    const label = BEHANDLUNG_AUS_SLUG[slug]
+    if (!label) return
+    setDaten((d) => ({ ...d, wunsch_behandlung: optionWert(label) }))
+    setPhase("kontakt")
+  }, [preisrahmenAktiv, vorausgewaehlt])
 
   const set = (name: string, value: string) => setDaten((d) => ({ ...d, [name]: value }))
 
@@ -442,6 +481,13 @@ export default function AnfrageFormular({
                 </div>
               )}
 
+              {preisrahmenAktiv && daten.wunsch_behandlung && (
+                <div className="db-label" style={{ gap: 4 }}>
+                  <span style={{ fontWeight: 600 }}>Richtwert: ab {leadWertProxy(daten.wunsch_behandlung)} €</span>
+                  <span className="db-optional" style={{ fontSize: 12, lineHeight: 1.5 }}>{PREIS_KLAUSEL_TEXT}</span>
+                </div>
+              )}
+
               <p className="db-legende">Wohin dürfen wir uns melden?</p>
               <div className="db-namen">
                 <label className="db-label">
@@ -502,7 +548,7 @@ export default function AnfrageFormular({
                 />
               </label>
 
-              {variante === "standard" && ZEITRAUM_FELD?.optionen && (
+              {variante === "standard" && !preisrahmenAktiv && ZEITRAUM_FELD?.optionen && (
                 <div className="db-label">
                   <span>Wann passt es dir? <span className="db-optional">(optional)</span></span>
                   <div className="db-chips">
@@ -517,6 +563,27 @@ export default function AnfrageFormular({
                           onClick={() => set("wunschzeitraum", aktiv ? "" : wert)}
                         >
                           {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {preisrahmenAktiv && (
+                <div className="db-label">
+                  <span>Wann möchtest du kommen? <span className="db-optional">(optional)</span></span>
+                  <div className="db-chips">
+                    {KOMMEN_OPTIONEN.map((o) => {
+                      const aktiv = daten.wunschzeitraum === o.value
+                      return (
+                        <button
+                          key={o.value}
+                          type="button"
+                          className={`db-chip${aktiv ? " db-chip-aktiv" : ""}`}
+                          onClick={() => set("wunschzeitraum", aktiv ? "" : o.value)}
+                        >
+                          {o.label}
                         </button>
                       )
                     })}

@@ -15,6 +15,7 @@
 import { salonTelefon, salonTelefonHref, salonEmail, salonAdresse } from "@/lib/site-info"
 import { behandlungLabel, zeitraumLabel } from "@/lib/lead-logic"
 import { waSalonFrageLink } from "@/lib/whatsapp"
+import { PREIS_KLAUSEL_TEXT } from "@/lib/preistexte"
 
 const SITE = process.env.SITE_URL || "https://www.diebianco.de"
 const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -39,11 +40,7 @@ export interface EmailInhalt {
   html: string
 }
 
-// ── Standard-Klausel Preise (wiederverwendbar in allen Kundinnen-Mails) ──────
-const PREIS_KLAUSEL_TEXT =
-  "Hinweis zu unseren Preisen: Alle genannten Preise sind ab-Preise und dienen der Orientierung. " +
-  "Der tatsächliche Preis richtet sich nach Zustand, Länge und Struktur deiner Haare sowie dem Aufwand " +
-  "der Behandlung und wird entsprechend angepasst. Teresa bespricht den Preis vor Beginn der Behandlung mit dir."
+// Preis-Klausel (Wortlaut Teresa) liegt zentral in lib/preistexte.ts.
 
 /** Preis-Klausel als eigener, klar abgesetzter Block (kleinere Schrift, grau). */
 export function preisKlausel(): { text: string; html: string } {
