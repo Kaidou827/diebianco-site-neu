@@ -42,14 +42,20 @@ export interface DigestZeile {
   id: string
   prioritaet: string | null | undefined
   createdateMs: number | null
+  /** letzte_anfrage_am (ms); Fallback createdate. Sortieranker. */
+  letzteAnfrageMs?: number | null
 }
 
-/** Digest-Sortierung: Priorität hoch→mittel→niedrig, dann createdate aufsteigend. */
+/**
+ * Digest-Sortierung: Priorität hoch→mittel→niedrig, dann `letzte_anfrage_am`
+ * ABSTEIGEND (Fallback createdate) – neueste (Wieder-)Anfrage zuerst.
+ */
 export function sortiereDigest<T extends DigestZeile>(zeilen: T[]): T[] {
+  const anker = (z: T) => z.letzteAnfrageMs ?? z.createdateMs ?? 0
   return [...zeilen].sort((a, b) => {
     const r = prioRang(a.prioritaet) - prioRang(b.prioritaet)
     if (r !== 0) return r
-    return (a.createdateMs ?? 0) - (b.createdateMs ?? 0)
+    return anker(b) - anker(a)
   })
 }
 
@@ -106,17 +112,22 @@ export interface ReaktivierungEingabe {
   einwilligung: boolean
   status: string
   createdateMs: number | null
+  /** letzte_anfrage_am (ms); Fallback createdate. Verhindert Reaktivierung gerade Wiedergekommener. */
+  letzteAnfrageMs?: number | null
   reaktivierungGesendet: boolean
   nowMs: number
 }
 
 export function sollReaktivieren(e: ReaktivierungEingabe): boolean {
+  // „alt ≥ 30 Tage" bezieht sich auf die LETZTE Anfrage (Fallback createdate),
+  // damit eine gerade erneut eingereichte Kundin KEINE Reaktivierungsmail bekommt.
+  const anker = e.letzteAnfrageMs ?? e.createdateMs
   return (
     e.einwilligung &&
     REAKT_STATUS.has(e.status) &&
     !e.reaktivierungGesendet &&
-    e.createdateMs != null &&
-    e.nowMs - e.createdateMs >= 30 * MS_TAG
+    anker != null &&
+    e.nowMs - anker >= 30 * MS_TAG
   )
 }
 

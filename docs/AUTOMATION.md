@@ -22,9 +22,10 @@ Formular (components/AnfrageFormular.tsx)
    │  1) Validierung (Vorname, Telefon, E-Mail) + Anti-Spam
    │  2) Ableitungen (lib/lead-logic.ts):
    │        Telefon → E.164, Priorität, Lead-Wert, Lead-Qualität
-   │  3) Upsert Kontakt per E-Mail (lib/hubspot.ts)
-   │        – bestehender Status wird NIE überschrieben
-   │        – Idempotenz: eingangsbestaetigung_gesendet < 5 Min → Stopp
+   │  3) Upsert Kontakt per E-Mail (lib/hubspot.ts, Logik: lib/wiederkehr.ts)
+   │        – Wiederanfrage (außerhalb 5-Min-Fenster) → lead_status_intern zurück
+   │          auf „neu" + letzte_anfrage_am / anzahl_anfragen / vorheriger_status
+   │        – Idempotenz: eingangsbestaetigung_gesendet < 5 Min → Stopp (KEIN Reset)
    │  4) Rückruf-Aufgabe anlegen (Association Task→Contact, Typ 204)
    │  5) Salon-Benachrichtigung + Eingangsbestätigung (lib/email-texts.ts)
    │        – nach Versand: eingangsbestaetigung_gesendet = jetzt
@@ -50,13 +51,16 @@ Detailfragen als **Welle 2** – je Antwort ein PATCH auf die Kontakt-ID.
 | `prioritaet` | **abgeleitet** aus Behandlung | `hoch` |
 | `lead_qualitaet` | **abgeleitet** aus Priorität + Zeitraum | `heiss` |
 | `lead_wert_proxy` | **abgeleitet** aus Behandlung (Zahl €) | `150` |
-| `lead_status_intern` | `neu` – **nur bei neuem/leerem Status** | `neu` |
+| `lead_status_intern` | `neu` – **bei jeder Anfrage außerhalb des 5-Min-Fensters**, auch Re-Anfrage (egal welcher Status vorher) | `neu` |
 | `hubspot_owner_id` | fest (Teresa) | `81184186` |
 | `quelle_seite` | Pfad der Anfrage | `/kontakt` |
 | `gclid`, `utm_source`, `utm_medium`, `utm_campaign` | Frontend (First-Touch, sessionStorage) | `cj0…` / `google` |
 | `einwilligung_marketing` | Checkbox (nur `true` gesetzt) | `true` |
 | `einwilligung_zeitpunkt` | Zeitpunkt der Checkbox (Unix-ms) | `1757…` |
 | `eingangsbestaetigung_gesendet` | nach Mail-Versand (Unix-ms) | `1757…` |
+| `letzte_anfrage_am` | Zeitpunkt der (letzten) Anfrage (Unix-ms) | `1800…` |
+| `anzahl_anfragen` | Zähler, +1 je Anfrage außerhalb des 5-Min-Fensters | `3` |
+| `vorheriger_status` | Status vor dem Reset (leer bei Erstanfrage) | `kein_interesse` |
 
 > Datum/Zeit-Properties werden als **Unix-Millisekunden** gesendet.
 > `einwilligung_marketing` wird **nie automatisch auf false** gesetzt (kein
@@ -68,6 +72,35 @@ Detailfragen als **Welle 2** – je Antwort ein PATCH auf die Kontakt-ID.
 > nicht überschrieben). Beim Absenden werden sie mitgeschickt. Als Property
 > gespeichert werden nur `gclid` und `utm_source/-medium/-campaign`;
 > `gbraid`, `wbraid`, `utm_term` landen nur im Server-Log.
+
+### Wiederkehrende Anfragen
+
+Schickt eine bereits bekannte Kundin erneut das Formular ab (außerhalb des
+5-Minuten-Idempotenzfensters), wird sie wieder als **neue Anfrage** behandelt –
+egal welchen `lead_status_intern` sie vorher hatte (auch `termin_vereinbart`,
+`kein_interesse`, `archiv`, …):
+
+- `lead_status_intern = neu`, `letzte_anfrage_am = jetzt`, `anzahl_anfragen + 1`,
+  `vorheriger_status` = alter Status.
+- `nicht_erreicht_mails_gesendet = 0`, `nicht_erreicht_seit` geleert,
+  `termin_status_aufgabe_gesendet` geleert. **`termin_datum` bleibt erhalten.**
+- Die Rückruf-Aufgabe bekommt den Betreff-Präfix **„Wieder da: "** und einen
+  Hinweisblock (vorheriger Status / Anfrage-Nr.; bei Termin in der Zukunft eine
+  Warnung; ggf. Hinweis auf eine evtl. offene Rückruf-Aufgabe). Dieselben
+  Hinweise stehen oben in der Salon-Benachrichtigung.
+- **Nicht wiederkehrend:** ein frischer Rumpf-Kontakt aus HubSpots Formular-
+  Erfassung (kein Status, keine Bestätigung) – zählt als normale Erstanfrage.
+- Im **Duplikatfenster** (< 5 Min) läuft **kein** Status-Reset; die übrigen
+  Properties werden wie bisher gepatcht.
+
+Wechselwirkung mit den Crons: **Digest** sortiert nach `letzte_anfrage_am`
+(neueste zuerst). **Reaktivierung** misst „alt ≥ 30 Tage" an `letzte_anfrage_am`
+→ gerade Wiedergekommene bekommen keine Reaktivierungsmail. **Archivierung**
+greift nur bei `kein_interesse` + `hs_lastmodifieddate ≥ 90 Tage` – eine
+Re-Anfrage setzt Status auf `neu` und lastmod auf jetzt, fällt also raus.
+
+Logik: `lib/wiederkehr.ts` (`berechneWiederkehr`, rein + getestet).
+Einmal-Backfill für Bestandskontakte: `pnpm backfill:letzte-anfrage` (Dry-Run Standard).
 
 ### Ableitungen (lib/lead-logic.ts)
 
@@ -174,10 +207,10 @@ werden als **Unix-Millisekunden** geschrieben.
 
 | Job | Route | Ziel (Berlin) | UTC (CEST/CET) | Auswahl |
 |---|---|---|---|---|
-| Digest | `/api/cron/digest` | Mo–Sa 08:30 | 06:30 / 07:30 | `lead_status_intern ∈ {neu, nicht_erreicht}`, sortiert Priorität→createdate |
+| Digest | `/api/cron/digest` | Mo–Sa 08:30 | 06:30 / 07:30 | `lead_status_intern ∈ {neu, nicht_erreicht}`, sortiert Priorität → `letzte_anfrage_am` absteigend (Fallback createdate) |
 | Nicht erreicht | `/api/cron/nicht-erreicht` | tägl. 10:00 | 08:00 / 09:00 | `nicht_erreicht`, ≥48 h seit `nicht_erreicht_seit`, Zähler-Stufen 1→2 |
 | Termine | `/api/cron/termine` | tägl. 09:00 | 07:00 / 08:00 | `termin_vereinbart` + `termin_datum`, Termin ≥2 Tage her → **Status-Aufgabe** für Teresa (keine Termin-Mails mehr) |
-| Reaktivierung | `/api/cron/reaktivierung` | Mo 09:30 | 07:30 / 08:30 | `einwilligung_marketing`, alt ≥30 Tage, offener Status |
+| Reaktivierung | `/api/cron/reaktivierung` | Mo 09:30 | 07:30 / 08:30 | `einwilligung_marketing`, `letzte_anfrage_am` (Fallback createdate) ≥30 Tage, offener Status |
 | Archiv | `/api/cron/archiv` | Mo 08:00 | 06:00 / 07:00 | `kein_interesse`, letzte Änderung ≥90 Tage → `archiv` (kein Löschen) |
 
 > **Winterzeit:** UTC-Crons verschieben sich nicht – im Winter laufen die Jobs

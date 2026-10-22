@@ -65,6 +65,8 @@ export interface SalonDaten {
   whatsappOk: string
   eingang: string
   deepLink: string
+  /** Hinweise für wiederkehrende Kundinnen (als eigener Block oben). */
+  hinweise?: string[]
 }
 
 const PRIO_LABEL: Record<string, string> = { hoch: "Hoch 🔴", mittel: "Mittel 🟡", niedrig: "Niedrig 🟢" }
@@ -77,6 +79,7 @@ export function salonBenachrichtigung(d: SalonDaten): EmailInhalt {
   const wa = d.whatsappOk === "ja_gerne" ? "Ja" : d.whatsappOk === "lieber_anrufen" ? "Nein" : "—"
   const prio = PRIO_LABEL[d.prioritaet] || d.prioritaet
   const quali = QUALI_LABEL[d.leadQualitaet] || d.leadQualitaet
+  const hinweise = d.hinweise ?? []
 
   const zeilen: Array<[string, string]> = [
     ["Name", name],
@@ -94,6 +97,7 @@ export function salonBenachrichtigung(d: SalonDaten): EmailInhalt {
 
   const text = [
     "🔔 Neue Anfrage – DIE BIANCO",
+    ...(hinweise.length ? ["", "⚠️ WIEDERKEHRENDE KUNDIN:", ...hinweise.map((h) => `• ${h}`)] : []),
     "",
     ...zeilen.map(([k, v]) => `${k}: ${v}`),
     "",
@@ -106,6 +110,7 @@ export function salonBenachrichtigung(d: SalonDaten): EmailInhalt {
 <div style="font-family:Arial,Helvetica,sans-serif;color:#2C2C2C;max-width:560px">
   <h2 style="margin:0 0 4px">🔔 Neue Anfrage</h2>
   <p style="margin:0 0 16px;color:#8a7d6a">Priorität <strong>${esc(prio)}</strong> · Lead-Qualität <strong>${esc(quali)}</strong> · ca. <strong>${esc(String(d.leadWert))} €</strong></p>
+  ${hinweise.length ? `<div style="margin:0 0 16px;padding:10px 14px;border-radius:8px;background:#FBEEDF;border:1px solid #E6C79A;color:#8a5a12;font-size:14px"><strong>⚠️ Wiederkehrende Kundin</strong><br>${hinweise.map((h) => esc(h)).join("<br>")}</div>` : ""}
   <table style="border-collapse:collapse;width:100%;font-size:15px">
     ${zeilen
       .map(

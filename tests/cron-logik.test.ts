@@ -77,14 +77,22 @@ test("sollReaktivieren", () => {
 })
 
 // ── Digest-Sortierung ────────────────────────────────────────────────────────
-test("sortiereDigest: Priorität, dann createdate", () => {
+test("sortiereDigest: Priorität, dann letzte_anfrage_am absteigend (Fallback createdate)", () => {
   const rows = [
     { id: "a", prioritaet: "niedrig", createdateMs: NOW - 1 * D },
     { id: "b", prioritaet: "hoch", createdateMs: NOW - 1 * D },
     { id: "c", prioritaet: "hoch", createdateMs: NOW - 5 * D },
     { id: "d", prioritaet: "mittel", createdateMs: NOW - 2 * D },
   ]
-  assert.deepEqual(sortiereDigest(rows).map((r) => r.id), ["c", "b", "d", "a"])
+  // hoch zuerst, darin neueste zuerst: b (-1d) vor c (-5d)
+  assert.deepEqual(sortiereDigest(rows).map((r) => r.id), ["b", "c", "d", "a"])
+
+  // letzte_anfrage_am schlägt createdate: alt erstellt, aber gerade wieder angefragt → zuerst
+  const rows2 = [
+    { id: "e", prioritaet: "hoch", createdateMs: NOW - 90 * D, letzteAnfrageMs: NOW - 1 * D },
+    { id: "f", prioritaet: "hoch", createdateMs: NOW - 2 * D },
+  ]
+  assert.deepEqual(sortiereDigest(rows2).map((r) => r.id), ["e", "f"])
 })
 
 // ── Auswahlfilter mit gemockter HubSpot-Zeile ───────────────────────────────
