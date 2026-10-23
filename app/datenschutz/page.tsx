@@ -451,6 +451,56 @@ export default function DatenschutzPage() {
               .
             </p>
           </div>
+
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold mb-3 text-[#333]">Cloudflare Turnstile</h3>
+            <p className="text-gray-700 mb-4">
+              Wir nutzen auf unseren Formularen (z. B. Kontakt- und Terminanfrage) den Dienst Cloudflare Turnstile.
+              Anbieter ist die Cloudflare, Inc., 101 Townsend St., San Francisco, CA 94107, USA (nachfolgend
+              Cloudflare).
+            </p>
+            <p className="text-gray-700 mb-4">
+              Turnstile dient dazu, zu überprüfen, ob die Dateneingabe auf unseren Formularen durch einen Menschen oder
+              durch ein automatisiertes Programm (Bot) erfolgt. So schützen wir unsere Formulare vor Spam und
+              missbräuchlicher automatisierter Nutzung. Hierzu analysiert Turnstile das Verhalten der Websitebesucher
+              anhand verschiedener Merkmale. Diese Analyse beginnt automatisch, sobald der Besucher ein mit Turnstile
+              geschütztes Formular aufruft bzw. absendet. Zur Analyse wertet Turnstile verschiedene Informationen aus
+              (z. B. IP-Adresse, Verweildauer auf der Website, vom Besucher getätigte Mausbewegungen oder Anfragen sowie
+              Angaben des Browsers und des Betriebssystems). Die während der Analyse erfassten Daten werden an Cloudflare
+              übermittelt.
+            </p>
+            <p className="text-gray-700 mb-4">
+              Die Speicherung und Analyse erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Der Websitebetreiber hat
+              ein berechtigtes Interesse daran, sein Kontaktformular vor missbräuchlichen automatisierten Zugriffen und
+              vor Spam zu schützen.
+            </p>
+            <p className="text-gray-700 mb-4 break-words">
+              Die Datenübertragung in die USA wird auf das EU-US Data Privacy Framework (DPF) gestützt; Cloudflare ist
+              unter dem DPF zertifiziert. Zur Verarbeitung personenbezogener Daten in unserem Auftrag haben wir mit
+              Cloudflare das Data Processing Addendum von Cloudflare abgeschlossen:
+              <a
+                href="https://www.cloudflare.com/cloudflare-customer-dpa/"
+                className="text-blue-600 hover:underline ml-1"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                https://www.cloudflare.com/cloudflare-customer-dpa/
+              </a>
+              .
+            </p>
+            <p className="text-gray-700 break-words">
+              Weitere Informationen zu Cloudflare Turnstile finden Sie in der Datenschutzerklärung von Cloudflare:
+              <a
+                href="https://www.cloudflare.com/privacypolicy/"
+                className="text-blue-600 hover:underline ml-1"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                https://www.cloudflare.com/privacypolicy/
+              </a>
+              .
+            </p>
+          </div>
         </div>
 
         {/* Bewerbungen */}

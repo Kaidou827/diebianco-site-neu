@@ -105,11 +105,11 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
     )
   }
 
-  // Anti-Spam
+  // Anti-Spam: Honeypot immer prüfen (billig, unabhängig von Turnstile).
+  if (String(body.honeypot || "").trim().length > 0) {
+    return NextResponse.json({ ok: false, message: "Anfrage konnte nicht validiert werden." }, { status: 400 })
+  }
   if (body.spamProtectionRequired) {
-    if (String(body.honeypot || "").trim().length > 0) {
-      return NextResponse.json({ ok: false, message: "Anfrage konnte nicht validiert werden." }, { status: 400 })
-    }
     const turnstileToken = String(body.turnstileToken || "")
     if (!turnstileToken) {
       return NextResponse.json({ ok: false, message: "Bitte CAPTCHA-Validierung abschliessen." }, { status: 400 })
@@ -117,6 +117,10 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
     if (!(await turnstileGueltig(turnstileToken, ip))) {
       return NextResponse.json({ ok: false, message: "CAPTCHA-Validierung fehlgeschlagen." }, { status: 400 })
     }
+  } else if (body.turnstileTimeout) {
+    // Client hat bis zu 10 s vergeblich auf ein Turnstile-Token gewartet und dann
+    // ohne abgesendet. Lead trotzdem annehmen, aber markieren – nie einen Lead verlieren.
+    console.warn("[anfrage] ohne_turnstile – Client-Token-Timeout, Lead ohne CAPTCHA angenommen")
   }
 
   const jetzt = new Date()
