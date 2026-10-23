@@ -22,13 +22,85 @@
  */
 
 import type React from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Script from "next/script"
 import { FORMULAR_FELDER, FARB_BEHANDLUNGEN, optionWert, type FeldDefinition } from "@/lib/hubspot/schema"
 import { leadWertProxy } from "@/lib/lead-logic"
 import LeadErfolgTracking from "@/components/LeadErfolgTracking"
 import { leseAttribution, erfasseFirstTouch } from "@/lib/attribution"
 import { PREIS_KLAUSEL_TEXT } from "@/lib/preistexte"
+import { waSalonFrageLink } from "@/lib/whatsapp"
+import { salonTelefon, salonTelefonHref } from "@/lib/site-info"
+
+// ── Cloudflare Turnstile (explizites Rendering) ──────────────────────────────
+interface TurnstileRenderOptions {
+  sitekey: string
+  theme?: "light" | "dark" | "auto"
+  callback?: (token: string) => void
+  "expired-callback"?: () => void
+  "error-callback"?: () => void
+}
+interface TurnstileApi {
+  render: (el: HTMLElement, opts: TurnstileRenderOptions) => string
+  remove: (widgetId: string) => void
+  reset: (widgetId?: string) => void
+}
+declare global {
+  interface Window {
+    turnstile?: TurnstileApi
+  }
+}
+
+/**
+ * Rendert das Turnstile-Widget EXPLIZIT beim Mount und entfernt es beim Unmount.
+ * Nötig, weil das implizite Rendering (Scan beim Script-Load) das Widget im
+ * mehrstufigen Formular nicht findet – der Container entsteht erst im Kontakt-
+ * Schritt. Der Token kommt über `callback` (Invisible-Modus liefert ihn
+ * automatisch); bei Ablauf/Fehler wird er geleert und das Widget zurückgesetzt.
+ */
+function TurnstileWidget({
+  siteKey,
+  dark,
+  scriptReady,
+  onToken,
+  onExpire,
+}: {
+  siteKey: string
+  dark: boolean
+  scriptReady: boolean
+  onToken: (token: string) => void
+  onExpire: () => void
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const widgetIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!scriptReady || !containerRef.current || !window.turnstile) return
+    const el = containerRef.current
+    widgetIdRef.current = window.turnstile.render(el, {
+      sitekey: siteKey,
+      theme: dark ? "dark" : "light",
+      callback: (token: string) => onToken(token),
+      "expired-callback": () => {
+        onExpire()
+        if (widgetIdRef.current && window.turnstile) window.turnstile.reset(widgetIdRef.current)
+      },
+      "error-callback": () => onExpire(),
+    })
+    return () => {
+      if (widgetIdRef.current && window.turnstile) {
+        try {
+          window.turnstile.remove(widgetIdRef.current)
+        } catch {
+          /* Widget evtl. schon entfernt – ignorieren. */
+        }
+      }
+      widgetIdRef.current = null
+    }
+  }, [scriptReady, siteKey, dark, onToken, onExpire])
+
+  return <div ref={containerRef} className="db-turnstile" />
+}
 
 type Phase = "behandlung" | "kontakt" | "b" | "fertig"
 
@@ -134,9 +206,24 @@ export default function AnfrageFormular({
   const [zeitBeleg, setZeitBeleg] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [fehler, setFehler] = useState("")
+  const [info, setInfo] = useState("")
   const [stapelOffen, setStapelOffen] = useState(false)
   const [sichtbar, setSichtbar] = useState(false)
   const [einwilligung, setEinwilligung] = useState(false)
+
+  // Turnstile: Script-Bereitschaft + aktueller Token (Ref für synchronen Zugriff
+  // beim Absenden, State nur fürs Re-Render des Widgets).
+  const [turnstileScriptReady, setTurnstileScriptReady] = useState(false)
+  const [, setTurnstileToken] = useState("")
+  const turnstileTokenRef = useRef("")
+  const setzeToken = useCallback((t: string) => {
+    turnstileTokenRef.current = t
+    setTurnstileToken(t)
+  }, [])
+  const leereToken = useCallback(() => {
+    turnstileTokenRef.current = ""
+    setTurnstileToken("")
+  }, [])
 
   const [daten, setDaten] = useState<Record<string, string>>({
     wunsch_behandlung: vorauswahlWert,
@@ -263,12 +350,23 @@ export default function AnfrageFormular({
     sanftInSicht()
   }
 
+  // Wartet bis zu maxMs auf ein Turnstile-Token (Invisible-Modus liefert es
+  // asynchron). Gibt den Token oder "" (Timeout) zurück.
+  const warteAufToken = (maxMs: number) =>
+    new Promise<string>((resolve) => {
+      const start = Date.now()
+      const tick = () => {
+        if (turnstileTokenRef.current) return resolve(turnstileTokenRef.current)
+        if (Date.now() - start >= maxMs) return resolve("")
+        setTimeout(tick, 250)
+      }
+      tick()
+    })
+
   const sendeWelle1 = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
     const honeypot = (form.querySelector('input[name="website"]') as HTMLInputElement | null)?.value || ""
-    const turnstileToken =
-      (form.querySelector('input[name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || ""
 
     const ziffern = daten.phone.replace(/\D/g, "")
     if (!daten.firstname.trim() || !daten.lastname.trim() || !daten.phone.trim() || !daten.email.trim()) {
@@ -279,13 +377,26 @@ export default function AnfrageFormular({
       setFehler("Bitte eine gültige Telefonnummer angeben.")
       return
     }
-    if (isTurnstileEnabled && !turnstileToken) {
-      setFehler("Bitte CAPTCHA-Validierung abschliessen.")
-      return
-    }
 
     setIsSubmitting(true)
     setFehler("")
+
+    // Turnstile (Invisible): Token liegt meist schon vor. Wenn nicht, NICHT still
+    // blockieren, sondern kurz warten und danach ohne Token absenden (der Server
+    // nimmt den Lead trotzdem an und markiert ihn „ohne_turnstile").
+    let token = turnstileTokenRef.current
+    let spamProtectionRequired = isTurnstileEnabled
+    let turnstileTimeout = false
+    if (isTurnstileEnabled && !token) {
+      setInfo("Kurze Sicherheitsprüfung läuft – wir senden gleich automatisch ab …")
+      token = await warteAufToken(10_000)
+      setInfo("")
+      if (!token) {
+        spamProtectionRequired = false
+        turnstileTimeout = true
+      }
+    }
+
     try {
       const quelleSeite = typeof window !== "undefined" ? window.location.pathname : ""
       const tracking = leseAttribution()
@@ -308,8 +419,9 @@ export default function AnfrageFormular({
           quelle_seite: quelleSeite || undefined,
           tracking: Object.keys(tracking).length ? tracking : undefined,
           honeypot,
-          turnstileToken: isTurnstileEnabled ? turnstileToken : undefined,
-          spamProtectionRequired: isTurnstileEnabled,
+          turnstileToken: token || undefined,
+          spamProtectionRequired,
+          turnstileTimeout: turnstileTimeout || undefined,
         }),
       })
       const json = (await res.json()) as { ok: boolean; contactId?: string; message?: string }
@@ -379,7 +491,12 @@ export default function AnfrageFormular({
       aria-label="Terminanfrage"
     >
       {isTurnstileEnabled && (
-        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="afterInteractive"
+          onLoad={() => setTurnstileScriptReady(true)}
+          onReady={() => setTurnstileScriptReady(true)}
+        />
       )}
 
       <div className={`db-karte${chrome ? "" : " db-bare"}`}>
@@ -631,8 +748,16 @@ export default function AnfrageFormular({
               </label>
 
               {isTurnstileEnabled && (
-                <div className="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme={theme === "dunkel" ? "dark" : "light"} data-size="flexible" />
+                <TurnstileWidget
+                  siteKey={turnstileSiteKey}
+                  dark={theme === "dunkel"}
+                  scriptReady={turnstileScriptReady}
+                  onToken={setzeToken}
+                  onExpire={leereToken}
+                />
               )}
+
+              {info && <div className="db-info">{info}</div>}
 
               <button type="submit" className="db-cta" disabled={isSubmitting}>
                 {isSubmitting ? "Sende…" : variante === "standard" ? "Wunschtermin unverbindlich anfragen" : "Anfrage absenden →"}
@@ -671,7 +796,18 @@ export default function AnfrageFormular({
           )}
         </div>
 
-        {fehler && <div className="db-fehler">{fehler}</div>}
+        {fehler && (
+          <div className="db-fehler">
+            <p>{fehler}</p>
+            <p className="db-fehler-fallback">
+              Klappt es gerade nicht? Erreich uns direkt per{" "}
+              <a href={waSalonFrageLink(gewaehlteBehandlung || undefined)} target="_blank" rel="noopener noreferrer">
+                WhatsApp
+              </a>{" "}
+              oder telefonisch unter <a href={salonTelefonHref}>{salonTelefon}</a>.
+            </p>
+          </div>
+        )}
       </div>
 
       <style>{stil}</style>
@@ -849,6 +985,12 @@ const stil = `
 .db-vertrauen-name { color: var(--db-akzent); font-size: 14px; margin: 2px 0 10px; }
 .db-vertrauen-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--db-taupe); }
 .db-fehler { margin-top: 14px; padding: 10px 14px; border-radius: 10px; background: rgba(179,38,30,0.1); color: #b3261e; font-size: 14px; border: 1px solid rgba(179,38,30,0.25); }
+.db-fehler p { margin: 0; }
+.db-fehler-fallback { margin-top: 6px !important; font-size: 13px; }
+.db-fehler-fallback a { color: #b3261e; font-weight: 600; text-decoration: underline; }
+.db-info { margin-top: 14px; padding: 10px 14px; border-radius: 10px; background: rgba(0,0,0,0.04); color: var(--db-taupe); font-size: 14px; border: 1px solid var(--db-sand); }
+.db-turnstile { margin-top: 4px; }
+.db-turnstile:empty { margin-top: 0; }
 .db-fertig { text-align: center; padding: 16px 0; }
 .db-fertig-haken { width: 56px; height: 56px; border-radius: 999px; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; background: var(--db-akzent); color: var(--db-cta-text); animation: db-pop .3s ease; }
 @keyframes db-pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
