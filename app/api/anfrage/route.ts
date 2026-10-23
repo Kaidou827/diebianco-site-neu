@@ -16,8 +16,10 @@ import {
   hubspotKonfiguriert,
   kontaktDeepLink,
   leseKontakt,
+  offeneRueckrufAufgaben,
   sucheKontaktId,
 } from "@/lib/hubspot"
+import { rueckrufHinweisText } from "@/lib/rueckruf-aufgaben"
 import { eingangsbestaetigung, salonBenachrichtigung } from "@/lib/email-texts"
 import { sendeMail, MAIL_EMPFAENGER, MAIL_REPLYTO } from "@/lib/mailer"
 import { waTerminBestaetigungLink } from "@/lib/whatsapp"
@@ -222,9 +224,16 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
         `Achtung: Termin am ${terminStr} ist bereits eingetragen – geht es um Verschieben oder eine Zusatzleistung?`,
       )
     }
-    // Hinweis auf mögliche offene Rückruf-Aufgabe (generisch – ohne Task-Suche per Association).
-    if (ergebnis.offeneAufgabeMoeglich) {
-      wiederHinweise.push("Hinweis: evtl. noch eine offene Rückruf-Aufgabe vorhanden – bitte eine davon schließen.")
+    // Echte Prüfung: hängt am Kontakt noch eine offene Rückruf-Aufgabe? (best effort)
+    // Läuft VOR dem Anlegen der neuen Aufgabe (unten) → sieht sich nicht selbst.
+    if (contactId) {
+      const offene = await offeneRueckrufAufgaben(contactId)
+      if (offene.scopeFehlt) {
+        console.error("[anfrage] tasks.read fehlt am Token – offene-Aufgaben-Hinweis übersprungen")
+      } else if (offene.ok) {
+        const hinweis = rueckrufHinweisText(offene.aufgaben)
+        if (hinweis) wiederHinweise.push(hinweis)
+      }
     }
   }
 

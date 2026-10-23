@@ -26,7 +26,6 @@ test("Rumpf-Kontakt (bestehend, kein Status, keine Bestätigung): NICHT wiederke
   assert.equal(r.wiederkehrend, false)
   assert.equal(r.properties.lead_status_intern, "neu")
   assert.equal(r.properties.anzahl_anfragen, "1")
-  assert.equal(r.offeneAufgabeMoeglich, false)
 })
 
 test("bestehend ohne Status, Bestätigung > 5 Min: wiederkehrend (über alte Bestätigung)", () => {
@@ -46,7 +45,6 @@ test("bestehend mit kein_interesse: wiederkehrend, Status zurück auf neu, Reset
   assert.equal(r.properties.nicht_erreicht_seit, "")
   assert.equal(r.properties.termin_status_aufgabe_gesendet, "")
   assert.equal(r.properties.kein_interesse_seit, "") // Archiv-Anker zurückgesetzt
-  assert.equal(r.offeneAufgabeMoeglich, false) // kein_interesse ist kein Rückruf-Status
 })
 
 test("bestehend termin_vereinbart + Termin in Zukunft: Reset, termin_datum unangetastet", () => {
