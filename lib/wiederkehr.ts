@@ -16,9 +16,6 @@
  * ─────────────────────────────────────────────────────────────────────────
  */
 
-/** Status, bei denen vermutlich noch eine offene Rückruf-Aufgabe existiert. */
-const RUECKRUF_STATUS = new Set(["neu", "nicht_erreicht", "kontaktiert"])
-
 export interface WiederkehrEingabe {
   /** Kontakt bereits in HubSpot vorhanden? */
   existiert: boolean
@@ -41,8 +38,6 @@ export interface WiederkehrErgebnis {
   anzahlAnfragen: number
   terminDatumMs: number | null
   terminInZukunft: boolean
-  /** Hinweis auf evtl. offene Rückruf-Aufgabe sinnvoll? */
-  offeneAufgabeMoeglich: boolean
   /** In den Upsert zu mergende Properties (LEER im Duplikatfenster). */
   properties: Record<string, string>
 }
@@ -61,7 +56,6 @@ export function berechneWiederkehr(e: WiederkehrEingabe): WiederkehrErgebnis {
       anzahlAnfragen: e.anzahlAlt,
       terminDatumMs: e.terminDatumMs,
       terminInZukunft,
-      offeneAufgabeMoeglich: false,
       properties: {},
     }
   }
@@ -94,7 +88,6 @@ export function berechneWiederkehr(e: WiederkehrEingabe): WiederkehrErgebnis {
     anzahlAnfragen,
     terminDatumMs: e.terminDatumMs,
     terminInZukunft,
-    offeneAufgabeMoeglich: wiederkehrend && RUECKRUF_STATUS.has(e.altStatus),
     properties,
   }
 }

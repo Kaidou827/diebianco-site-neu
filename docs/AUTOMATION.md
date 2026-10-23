@@ -158,6 +158,7 @@ Die Kundin erhält parallel die **Eingangsbestätigung** (Absender
 |---|---|---|
 | Kontakte lesen/schreiben | `crm.objects.contacts.read/write` | ✅ vorhanden |
 | Aufgaben anlegen | `crm.objects.tasks.write` | ✅ vorhanden (getestet: create 201 / delete 204) |
+| Aufgaben **lesen** (offene-Rückruf-Hinweis) | `crm.objects.tasks.read` | ⚠️ prüfen – nötig für den „offene Rückruf-Aufgabe"-Hinweis bei Wiederkehr; fehlt er → 403, Hinweis wird still übersprungen (Lead läuft normal) |
 | Owner zuweisen | (Teil von contacts.write) | ✅ funktioniert (81184186 verifiziert) |
 | Owner **auflisten** | `crm.objects.owners.read` | ⚠️ **fehlt** (403) |
 
@@ -166,6 +167,12 @@ Die Kundin erhält parallel die **Eingangsbestätigung** (Absender
 > ergänzen: HubSpot → Einstellungen → Integrationen → Private Apps → Scopes.
 > Sollte der Task-Call künftig doch 403 liefern, denselben Weg für
 > `crm.objects.tasks.write` gehen.
+>
+> **`crm.objects.tasks.read` prüfen:** In der Private App unter *Scopes → CRM*
+> abhaken, ob `crm.objects.tasks.read` gesetzt ist. Schnelltest mit Token:
+> `curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $HUBSPOT_PRIVATE_APP_TOKEN" "https://api.hubapi.com/crm/v3/objects/tasks?limit=1"`
+> → `200` = vorhanden, `403` = fehlt (dann in der App ergänzen; der Hinweis wird
+> bis dahin still übersprungen, der Lead läuft normal).
 
 ---
 
@@ -189,14 +196,36 @@ Siehe `.env.example`. Kurzüberblick:
 
 Der Spam-Schutz (Cloudflare Turnstile) ist **bedingt**: Das Widget rendert und
 wird serverseitig geprüft **nur, wenn beide ENV-Variablen gesetzt sind** – sonst
-bleibt das Formular voll funktionsfähig (ohne CAPTCHA). Zum Aktivieren beide
-Variablen in Vercel hinterlegen (Prod + Preview) und neu deployen:
+bleibt das Formular voll funktionsfähig (ohne CAPTCHA). Der Code ist fertig
+([components/AnfrageFormular.tsx](../components/AnfrageFormular.tsx),
+[app/api/anfrage/route.ts](../app/api/anfrage/route.ts)); es fehlen nur die Keys.
 
-- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` — Site-Key (Client, rendert das Widget)
-- `TURNSTILE_SECRET_KEY` — Secret-Key (Server, prüft den Token)
+> **Wichtig:** Beide Keys sind **zusammen** nötig. Nur Site-Key → Widget sichtbar,
+> aber der Server lässt alles durch (keine echte Prüfung). Nur Secret-Key →
+> Formular zeigt kein Widget und sendet `spamProtectionRequired: false` (aktueller
+> Prod-Zustand). Und: `NEXT_PUBLIC_*` wird **beim Build** eingebacken → nach dem
+> Setzen der Variablen ist ein **Redeploy** zwingend, eine reine Env-Änderung
+> greift nicht.
 
-Beide Keys stammen aus dem Cloudflare-Turnstile-Dashboard (eine Site für die
-Domain diebianco.de anlegen). Fehlt nur einer der beiden, bleibt der Schutz aus.
+**4 Schritte:**
+
+1. **Cloudflare:** Turnstile-Widget anlegen für `diebianco.de` **und**
+   `www.diebianco.de` (optional Vercel-Preview-Domains). Widget-Modus nach Wahl
+   (z. B. **unsichtbar/Managed**). Ergebnis: Site-Key + Secret-Key.
+2. **Vercel → Settings → Environment Variables** (Scope **Production**, sinnvoll
+   auch **Preview**):
+   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` = Site-Key (Client, rendert das Widget)
+   - `TURNSTILE_SECRET_KEY` = Secret-Key (Server, prüft den Token)
+3. **Redeploy** auslösen (neuer Build, damit der Site-Key eingebacken wird).
+4. **Verifizieren:** Formular zeigt das Widget (bei unsichtbarem Modus ggf. nur
+   das Cloudflare-Badge), Netzwerk-Payload von `/api/anfrage` enthält
+   `spamProtectionRequired: true` + `turnstileToken`, Server validiert.
+
+> **Datenschutz:** Turnstile ist bislang **nicht** in der Datenschutzerklärung
+> erwähnt. Vor dem Aktivieren den Textvorschlag in
+> [docs/DATENSCHUTZ-TURNSTILE-VORSCHLAG.md](DATENSCHUTZ-TURNSTILE-VORSCHLAG.md)
+> von Teresa freigeben lassen und als Abschnitt in `app/datenschutz/page.tsx`
+> (Kapitel „4. Plugins und Tools") ergänzen. **Nicht automatisch live geschaltet.**
 
 ## Zeitgesteuerte Jobs (Vercel Cron)
 

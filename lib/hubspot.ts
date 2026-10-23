@@ -9,6 +9,14 @@
  * ─────────────────────────────────────────────────────────────────────────
  */
 
+import {
+  filtereOffeneRueckruf,
+  istScopeFehler,
+  parseTaskDatumMs,
+  type OffeneAufgabe,
+  type RohTask,
+} from "./rueckruf-aufgaben"
+
 const API_BASE = process.env.HUBSPOT_API_BASE || "https://api.hubapi.com"
 const TOKEN = process.env.HUBSPOT_PRIVATE_APP_TOKEN || ""
 
@@ -203,5 +211,62 @@ export async function erstelleAufgabe(a: AufgabeEingabe): Promise<AufgabeErgebni
     return { ok: true, id: json.id }
   } catch (err) {
     return { ok: false, fehler: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+export interface OffeneAufgabenErgebnis {
+  /** Abruf erfolgreich (dann sind `aufgaben` belastbar). */
+  ok: boolean
+  /** true = 403, d. h. crm.objects.tasks.read fehlt am Token. */
+  scopeFehlt: boolean
+  /** Offene Rückruf-Aufgaben, älteste zuerst (leer bei Fehler). */
+  aufgaben: OffeneAufgabe[]
+}
+
+/**
+ * Offene Rückruf-Aufgaben eines Kontakts ermitteln: assoziierte Tasks lesen,
+ * auf Status ≠ COMPLETED + Betreff „Rückruf:" filtern (siehe
+ * lib/rueckruf-aufgaben). Best effort – wirft NIE; 403 (fehlender
+ * crm.objects.tasks.read-Scope) wird separat gemeldet, damit der Aufrufer den
+ * Hinweis still überspringen kann statt einen generischen zu zeigen.
+ *
+ * Benötigt Scope **crm.objects.tasks.read** (zusätzlich zum vorhandenen
+ * crm.objects.tasks.write aus `erstelleAufgabe`).
+ */
+export async function offeneRueckrufAufgaben(contactId: string): Promise<OffeneAufgabenErgebnis> {
+  try {
+    // 1) Assoziierte Task-IDs (Contact → Tasks).
+    const assocRes = await hsFetch(`/crm/v3/objects/contacts/${contactId}/associations/tasks`)
+    if (!assocRes.ok) {
+      return { ok: false, scopeFehlt: istScopeFehler(assocRes.status), aufgaben: [] }
+    }
+    const assocJson = (await assocRes.json()) as { results?: { toObjectId?: string; id?: string }[] }
+    const ids = (assocJson.results ?? []).map((r) => String(r.toObjectId ?? r.id ?? "")).filter(Boolean)
+    if (ids.length === 0) return { ok: true, scopeFehlt: false, aufgaben: [] }
+
+    // 2) Tasks im Batch lesen (Status, Betreff, Erstelldatum).
+    const batchRes = await hsFetch("/crm/v3/objects/tasks/batch/read", {
+      method: "POST",
+      body: JSON.stringify({
+        properties: ["hs_task_status", "hs_task_subject", "hs_createdate"],
+        inputs: ids.map((id) => ({ id })),
+      }),
+    })
+    if (!batchRes.ok) {
+      return { ok: false, scopeFehlt: istScopeFehler(batchRes.status), aufgaben: [] }
+    }
+    const batchJson = (await batchRes.json()) as {
+      results?: { id: string; properties: Record<string, string> }[]
+    }
+    const roh: RohTask[] = (batchJson.results ?? []).map((t) => ({
+      id: t.id,
+      status: t.properties.hs_task_status ?? "",
+      subject: t.properties.hs_task_subject ?? "",
+      erstelltMs: parseTaskDatumMs(t.properties.hs_createdate),
+    }))
+    return { ok: true, scopeFehlt: false, aufgaben: filtereOffeneRueckruf(roh) }
+  } catch (err) {
+    console.error("[hubspot] offeneRueckrufAufgaben fehlgeschlagen:", err)
+    return { ok: false, scopeFehlt: false, aufgaben: [] }
   }
 }
