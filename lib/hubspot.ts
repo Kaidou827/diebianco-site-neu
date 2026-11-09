@@ -9,6 +9,8 @@
  * ─────────────────────────────────────────────────────────────────────────
  */
 
+import { telefonFilterGroups, waehleKontaktId, type TelefonTreffer } from "@/lib/telefon-match"
+
 const API_BASE = process.env.HUBSPOT_API_BASE || "https://api.hubapi.com"
 const TOKEN = process.env.HUBSPOT_PRIVATE_APP_TOKEN || ""
 
@@ -52,6 +54,55 @@ export async function sucheKontaktId(email: string): Promise<string | null> {
   if (!res.ok) throw new Error(`Kontaktsuche fehlgeschlagen: ${res.status} ${await res.text()}`)
   const json = (await res.json()) as { results?: Array<{ id: string }> }
   return json.results?.[0]?.id ?? null
+}
+
+/** HubSpot-Datetime (epoch-ms oder ISO) → ms, sonst null. */
+function parseDatetimeMs(wert: string | null | undefined): number | null {
+  if (!wert) return null
+  const n = Number(wert)
+  if (Number.isFinite(n) && n > 0) return n
+  const d = Date.parse(wert)
+  return Number.isNaN(d) ? null : d
+}
+
+/**
+ * Kontakt-ID per Telefonnummer finden (ZWEITER Upsert-Schlüssel, Rückfalllinie
+ * zur E-Mail-Suche). Erwartet eine normalisierte E.164-Nummer.
+ *
+ * Wirft NIE: Bei fehlender Nummer, HTTP-Fehler oder Ausnahme → null, damit eine
+ * Telefon-Suche den E-Mail-/Neuanlage-Pfad niemals ausbremst. Bei mehreren
+ * Treffern entscheidet waehleKontaktId (ältester Kontakt mit Status).
+ */
+export async function sucheKontaktIdPerTelefon(phoneE164: string): Promise<string | null> {
+  const filterGroups = telefonFilterGroups(phoneE164)
+  if (!filterGroups.length) return null
+  try {
+    const res = await hsFetch("/crm/v3/objects/contacts/search", {
+      method: "POST",
+      body: JSON.stringify({
+        filterGroups,
+        properties: ["createdate", "lead_status_intern"],
+        sorts: [{ propertyName: "createdate", direction: "ASCENDING" }],
+        limit: 10,
+      }),
+    })
+    if (!res.ok) {
+      console.warn(`[hubspot] Telefon-Suche fehlgeschlagen (${res.status}) – fahre ohne Telefon-Treffer fort.`)
+      return null
+    }
+    const json = (await res.json()) as {
+      results?: Array<{ id: string; properties?: Record<string, string | null> }>
+    }
+    const treffer: TelefonTreffer[] = (json.results ?? []).map((r) => ({
+      id: r.id,
+      createdateMs: parseDatetimeMs(r.properties?.createdate),
+      hatStatus: Boolean((r.properties?.lead_status_intern || "").trim()),
+    }))
+    return waehleKontaktId(treffer)
+  } catch (err) {
+    console.warn("[hubspot] Telefon-Suche Ausnahme – ignoriere:", err instanceof Error ? err.message : err)
+    return null
+  }
 }
 
 export interface KontaktZeile {
