@@ -17,6 +17,7 @@ import {
   kontaktDeepLink,
   leseKontakt,
   sucheKontaktId,
+  sucheKontaktIdPerTelefon,
 } from "@/lib/hubspot"
 import { eingangsbestaetigung, salonBenachrichtigung } from "@/lib/email-texts"
 import { sendeMail, MAIL_EMPFAENGER, MAIL_REPLYTO } from "@/lib/mailer"
@@ -173,15 +174,29 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
 
   // ── Upsert + Idempotenz + Wiederkehr-Erkennung (reine Logik: lib/wiederkehr) ──
   let contactId: string | null = null
+  // Hinweis für Teresa, falls der Treffer NICHT über die E-Mail, sondern über
+  // die Telefonnummer kam (andere Anfrage-Mail als am Kontakt hinterlegt).
+  let abweichendeMailHinweis = ""
   let ergebnis = berechneWiederkehr({
     existiert: false, altStatus: "", letzteBestaetigungMs: null, anzahlAlt: 0,
     terminDatumMs: null, jetztMs: jetzt.getTime(), idempotenzMs: IDEMPOTENZ_MS,
   })
   try {
     if (!hubspotKonfiguriert()) throw new Error("HUBSPOT_PRIVATE_APP_TOKEN fehlt.")
-    const vorhandeneId = await sucheKontaktId(email)
+    // 1. Primär per E-Mail. 2. Kein Treffer → Rückfalllinie Telefonnummer, damit
+    //    eine erneute Anfrage mit ANDERER E-Mail keine Dublette erzeugt.
+    let vorhandeneId = await sucheKontaktId(email)
+    let perTelefonGefunden = false
+    if (!vorhandeneId && phoneE164) {
+      const perTel = await sucheKontaktIdPerTelefon(phoneE164)
+      if (perTel) {
+        vorhandeneId = perTel
+        perTelefonGefunden = true
+      }
+    }
     if (vorhandeneId) {
       const alt = await leseKontakt(vorhandeneId, [
+        "email",
         "eingangsbestaetigung_gesendet",
         "lead_status_intern",
         "termin_datum",
@@ -199,6 +214,16 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
       // Status-Reset/neue Felder nur außerhalb des Duplikatfensters (dann leer).
       // termin_datum bleibt unangetastet.
       Object.assign(properties, ergebnis.properties)
+      // Telefon-Treffer mit abweichender E-Mail: die am Kontakt hinterlegte
+      // primäre E-Mail NICHT überschreiben (sonst ginge sie verloren) – stattdessen
+      // Teresa auf die neue Adresse hinweisen. Nichts geht verloren.
+      const altEmail = (alt.email || "").trim()
+      if (perTelefonGefunden && altEmail && altEmail.toLowerCase() !== email.toLowerCase()) {
+        delete properties.email
+        abweichendeMailHinweis =
+          `Über die Telefonnummer einem bestehenden Kontakt zugeordnet (als Wiederanfrage zusammengeführt). ` +
+          `Neue Anfrage kam mit E-Mail ${email}; am Kontakt hinterlegt bleibt ${altEmail}.`
+      }
       await aktualisiereKontakt(vorhandeneId, properties)
       contactId = vorhandeneId
     } else {
@@ -231,6 +256,10 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
       wiederHinweise.push("Hinweis: evtl. noch eine offene Rückruf-Aufgabe vorhanden – bitte eine davon schließen.")
     }
   }
+
+  // Telefon-Zusammenführung immer anzeigen – auch wenn der Kontakt nicht als
+  // „wiederkehrend" erkannt wurde (z. B. Rumpf-Kontakt ohne Status).
+  if (abweichendeMailHinweis) wiederHinweise.push(abweichendeMailHinweis)
 
   // Bei erkanntem Duplikat: keine zweite Aufgabe, keine zweite Mail.
   if (istDuplikat) {
