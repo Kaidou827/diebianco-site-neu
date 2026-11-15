@@ -353,42 +353,7 @@ export default function UeberUns() {
               </div>
 
               {/* Friseurmeister - Traditional Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-20 justify-center">
-                {/* Thomas */}
-                <div className="bg-black/20 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg border border-white/10 transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
-                  <div className="relative h-80 overflow-hidden">
-                    <Image
-                      src="/images/team-member-1.jpeg"
-                      alt="Thomas - Friseurmeister"
-                      fill
-                      className="object-cover object-[center_15%]"
-                    />
-                    <div className="absolute top-4 left-4 w-12 h-12">
-                      <div className="absolute top-0 left-0 w-full h-full border-t-2 border-l-2 border-[#D4C6A6]/40"></div>
-                    </div>
-                    <div className="absolute bottom-4 right-4 w-12 h-12">
-                      <div className="absolute bottom-0 right-0 w-full h-full border-b-2 border-r-2 border-[#D4C6A6]/40"></div>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="font-serif text-2xl text-white mb-1">Thomas</h3>
-                    <p className="text-[#D4C6A6] text-sm mb-4">Friseurmeister</p>
-                    <div className="w-12 h-px bg-[#D4C6A6]/50 mb-4"></div>
-                    <p className="text-white/80 leading-relaxed">
-                      Bekannt für seine ehrliche Beratung und kreative Farbexpertise. Seine unverwechselbaren
-                      Handtechniken sind sein Markenzeichen – individuell und exklusiv.
-                    </p>
-                    <div className="flex gap-3 mt-4">
-                      <span className="inline-block px-3 py-1 bg-black/30 backdrop-blur-sm rounded-full text-xs text-white/80">
-                        Farbkolorist
-                      </span>
-                      <span className="inline-block px-3 py-1 bg-black/30 backdrop-blur-sm rounded-full text-xs text-white/80">
-                        Freihandtechniken
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 mb-20 max-w-3xl mx-auto">
                 {/* Sunny */}
                 <div className="bg-black/20 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg border border-white/10 transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
                   <div className="relative h-80 overflow-hidden">
