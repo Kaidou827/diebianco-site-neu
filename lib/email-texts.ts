@@ -67,6 +67,10 @@ export interface SalonDaten {
   deepLink: string
   /** Hinweise für wiederkehrende Kundinnen (als eigener Block oben). */
   hinweise?: string[]
+  /** Herkunfts-Zeile (Seite · utm · fbclid), siehe anfrageHerkunft(). */
+  quelle?: string
+  /** Name der Anzeige (utm_content); erscheint zusätzlich im Betreff. */
+  anzeige?: string
 }
 
 const PRIO_LABEL: Record<string, string> = { hoch: "Hoch 🔴", mittel: "Mittel 🟡", niedrig: "Niedrig 🟢" }
@@ -94,6 +98,8 @@ export function salonBenachrichtigung(d: SalonDaten): EmailInhalt {
     ["Eingang", d.eingang],
   ]
   if (d.nachricht) zeilen.push(["Nachricht", d.nachricht])
+  if (d.anzeige) zeilen.push(["Anzeige", d.anzeige])
+  if (d.quelle) zeilen.push(["Quelle", d.quelle])
 
   const text = [
     "🔔 Neue Anfrage – DIE BIANCO",
@@ -126,7 +132,8 @@ export function salonBenachrichtigung(d: SalonDaten): EmailInhalt {
 </div>`.trim()
 
   const prioTag = d.prioritaet === "hoch" ? " [HOCH]" : ""
-  return { subject: `Neue Anfrage: ${d.firstname || "Kundin"} – ${behandlung}${prioTag}`, text, html }
+  const anzeigeTag = d.anzeige ? ` · Anzeige: ${d.anzeige}` : ""
+  return { subject: `Neue Anfrage: ${d.firstname || "Kundin"} – ${behandlung}${prioTag}${anzeigeTag}`, text, html }
 }
 
 // ── Eingangsbestätigung (Kundin) ────────────────────────────────────────────
