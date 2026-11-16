@@ -1,6 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
+  anfrageHerkunft,
   behandlungsDauer,
   leadQualitaet,
   leadWertProxy,
@@ -67,4 +68,40 @@ test("Telefon nach E.164 normalisieren", () => {
   assert.equal(normalisiereTelefonE164("+43 660 1234567"), "+436601234567")
   assert.equal(normalisiereTelefonE164(""), "")
   assert.equal(normalisiereTelefonE164("   "), "")
+})
+
+test("Herkunft: Meta-Anzeige mit utm_content wird als Anzeige ausgewiesen", () => {
+  const h = anfrageHerkunft("/dienstleistungen/keratinbehandlung", {
+    utm_source: "facebook",
+    utm_medium: "paid",
+    utm_campaign: "DieBianco_Webseitbuchung",
+    utm_content: "keratin_video2",
+    fbclid: "abc123",
+  })
+  assert.equal(h.anzeige, "keratin_video2")
+  assert.equal(
+    h.quelle,
+    "/dienstleistungen/keratinbehandlung · utm: facebook/paid/DieBianco_Webseitbuchung/keratin_video2 · fbclid: ja",
+  )
+  // Klick-IDs nie im Klartext.
+  assert.equal(h.quelle.includes("abc123"), false)
+})
+
+test("Herkunft: ohne Kampagnen-Daten bleibt nur die Seite", () => {
+  const h = anfrageHerkunft("/kontakt", {})
+  assert.equal(h.anzeige, "")
+  assert.equal(h.quelle, "/kontakt · keine Kampagnen-Daten")
+  assert.equal(anfrageHerkunft("", {}).quelle, "/kontakt · keine Kampagnen-Daten")
+})
+
+test("Herkunft: Google-Klick und fehlende utm-Teile", () => {
+  const h = anfrageHerkunft("/kontakt", { gclid: "xyz", utm_source: "google" })
+  assert.equal(h.quelle, "/kontakt · utm: google/-/- · fbclid: nein · Google-Klick: ja")
+  assert.equal(h.quelle.includes("xyz"), false)
+})
+
+test("Herkunft: Steuerzeichen und Überlänge aus URL-Werten werden entschärft", () => {
+  const h = anfrageHerkunft("/kontakt", { utm_content: "video1\r\nBcc: x@example.com" + "a".repeat(200) })
+  assert.equal(/[\r\n]/.test(h.anzeige), false)
+  assert.equal(h.anzeige.length <= 80, true)
 })

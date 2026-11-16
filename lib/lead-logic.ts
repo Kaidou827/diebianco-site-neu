@@ -103,6 +103,47 @@ export function whatsappLabel(wert: string): string {
   return ""
 }
 
+/** Herkunft einer Anfrage, lesbar für Salon-Mail und Rückruf-Aufgabe. */
+export interface AnfrageHerkunft {
+  /** Eine Zeile: Seite · utm: Quelle/Medium/Kampagne[/Anzeige] · fbclid: ja|nein. */
+  quelle: string
+  /** Name der Anzeige (utm_content), leer wenn keine Anzeige erkennbar ist. */
+  anzeige: string
+}
+
+/** URL-Werte kommen von außen: Steuerzeichen raus, Länge begrenzen. */
+function herkunftWert(wert: unknown): string {
+  return String(wert ?? "")
+    .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .trim()
+    .slice(0, 80)
+}
+
+/**
+ * Baut aus Formularseite + Kampagnen-Attribution die Herkunfts-Zeile, damit im
+ * Salon sofort sichtbar ist, über welche Seite und welche Anzeige eine Anfrage
+ * kam (z. B. `keratin_video2`). Enthält keine personenbezogenen Daten: Klick-IDs
+ * werden nur als ja/nein ausgegeben.
+ */
+export function anfrageHerkunft(quelleSeite: string, tracking: Record<string, unknown>): AnfrageHerkunft {
+  const seite = herkunftWert(quelleSeite) || "/kontakt"
+  const quelleUtm = herkunftWert(tracking.utm_source)
+  const medium = herkunftWert(tracking.utm_medium)
+  const kampagne = herkunftWert(tracking.utm_campaign)
+  const anzeige = herkunftWert(tracking.utm_content)
+  const fbclid = Boolean(herkunftWert(tracking.fbclid))
+  const googleKlick = ["gclid", "gbraid", "wbraid"].some((k) => Boolean(herkunftWert(tracking[k])))
+
+  if (!quelleUtm && !medium && !kampagne && !anzeige && !fbclid && !googleKlick) {
+    return { quelle: `${seite} · keine Kampagnen-Daten`, anzeige: "" }
+  }
+  const quelle =
+    `${seite} · utm: ${quelleUtm || "-"}/${medium || "-"}/${kampagne || "-"}` +
+    `${anzeige ? "/" + anzeige : ""} · fbclid: ${fbclid ? "ja" : "nein"}` +
+    `${googleKlick ? " · Google-Klick: ja" : ""}`
+  return { quelle, anzeige }
+}
+
 /**
  * Priorität aus der Wunsch-Behandlung.
  *  hoch  = Grey Blending, Balayage, Keratin, Strähnen/Blondierung

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { FELDER } from "@/lib/hubspot/schema"
 import {
+  anfrageHerkunft,
   behandlungLabel,
   faelligkeitTimestamp,
   leadQualitaet,
@@ -129,6 +130,9 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
   const prioritaet = prioritaetFuerBehandlung(wunschBehandlung)
   const leadWert = leadWertProxy(wunschBehandlung)
   const qualitaet = leadQualitaet(prioritaet, wunschzeitraum)
+  // Herkunft (Seite + Anzeige) für Salon-Mail und Rückruf-Aufgabe – unabhängig
+  // davon, ob die Attribution-Properties in HubSpot existieren.
+  const herkunft = anfrageHerkunft(quelleSeite, tracking)
 
   // ── Properties (server-kontrolliert) ──
   const properties: Record<string, string> = {
@@ -287,6 +291,8 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
       `Nachricht: ${nachricht || "—"}`,
       `Priorität: ${prioritaet}`,
       `Eingang: ${eingangStr}`,
+      ...(herkunft.anzeige ? [`Anzeige: ${herkunft.anzeige}`] : []),
+      `Quelle: ${herkunft.quelle}`,
     ]
     if (waTermin) aufgabeBody.push(`Terminbestätigung per WhatsApp: ${waTermin}`)
 
@@ -319,6 +325,8 @@ async function handleWelle1(body: Record<string, unknown>, ip: string): Promise<
         }).format(jetzt),
         deepLink: contactId ? kontaktDeepLink(contactId) : "(Kontakt konnte nicht in HubSpot gespeichert werden)",
         hinweise: wiederHinweise,
+        quelle: herkunft.quelle,
+        anzeige: herkunft.anzeige,
       }),
     })
   } catch (mailErr) {
