@@ -1,6 +1,5 @@
 import type React from "react"
 import type { Metadata } from "next"
-import Script from "next/script"
 
 export const metadata: Metadata = {
   title: "Grey Blending Friseur Krefeld | DIE BIANCO Salon",
@@ -20,12 +19,6 @@ export default function GreyBlendingLandingLayout({
   return (
     <>
       {children}
-      <Script
-        id="hs-script-loader"
-        src="//js-eu1.hs-scripts.com/146440145.js"
-        strategy="afterInteractive"
-        data-cookieconsent="marketing"
-      />
     </>
   )
 }

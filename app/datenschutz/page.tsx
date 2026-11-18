@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import CookieEinstellungenLink from "@/components/CookieEinstellungenLink"
 
 export const metadata: Metadata = {
   title: "Datenschutzerklärung - Die Bianco",
@@ -345,6 +346,10 @@ export default function DatenschutzPage() {
             <p className="text-gray-700">
               Welche Cookies und Dienste auf dieser Website eingesetzt werden, können Sie dieser Datenschutzerklärung
               entnehmen.
+            </p>
+            <p className="text-gray-700 mt-4">
+              Ihre Einwilligung zu Statistik- und Marketing-Diensten können Sie jederzeit ändern oder widerrufen:{" "}
+              <CookieEinstellungenLink className="underline text-[#333] hover:text-black" />
             </p>
           </div>
 

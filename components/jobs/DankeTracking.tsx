@@ -1,17 +1,18 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { CONSENT_EVENT } from "@/lib/consent"
 
 /**
  * Conversion-Tracking der Bewerbungs-Danke-Seite.
  * - dataLayer.push({event:'bewerbung_danke', stelle}) für GTM – sofort, unabhängig vom Consent.
  * - Meta-Pixel Standard-Event „SubmitApplication" (content_category, content_name, eventID).
  *
- * Robust gegen Race Condition: window.fbq existiert erst, wenn Cookiebot den Pixel
+ * Robust gegen Race Condition: window.fbq existiert erst, wenn der Cookie-Banner den Pixel
  * nach Marketing-Consent freigegeben + geladen hat. Deshalb:
  *   1) Sofortversuch beim Mount.
  *   2) Falls fbq noch fehlt: bis 10 s alle 250 ms erneut versuchen.
- *   3) Zusätzlich auf das Consent-Event „CookiebotOnAccept" hören.
+ *   3) Zusätzlich auf das Consent-Event „db:consent" hören (auch nach den 10 s).
  * Das Event wird über einen useRef-Guard GENAU EINMAL gefeuert; alle Timer/Listener
  * werden im Cleanup aufgeräumt.
  */
@@ -49,10 +50,13 @@ export default function DankeTracking({ stelle }: { stelle: string }) {
     let timeoutId: ReturnType<typeof setTimeout> | undefined
 
     // Funktionsdeklarationen → gehoistet, Reihenfolge unkritisch.
-    function aufraeumen() {
+    function pollenStoppen() {
       if (intervalId !== undefined) clearInterval(intervalId)
       if (timeoutId !== undefined) clearTimeout(timeoutId)
-      window.removeEventListener("CookiebotOnAccept", onConsent)
+    }
+    function aufraeumen() {
+      pollenStoppen()
+      window.removeEventListener(CONSENT_EVENT, onConsent)
     }
 
     function onConsent() {
@@ -73,8 +77,8 @@ export default function DankeTracking({ stelle }: { stelle: string }) {
     // 1) Sofortversuch. Wenn fbq noch fehlt: 2) pollen + 3) auf Consent hören.
     if (!feuern()) {
       intervalId = setInterval(feuern, RETRY_INTERVAL_MS)
-      timeoutId = setTimeout(aufraeumen, MAX_WARTEZEIT_MS)
-      window.addEventListener("CookiebotOnAccept", onConsent)
+      timeoutId = setTimeout(pollenStoppen, MAX_WARTEZEIT_MS)
+      window.addEventListener(CONSENT_EVENT, onConsent)
     }
 
     return aufraeumen

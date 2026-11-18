@@ -1,5 +1,6 @@
 import Image from "next/image"
 import { openingHours } from "@/lib/site-info"
+import CookieEinstellungenLink from "@/components/CookieEinstellungenLink"
 
 export default function SiteFooter() {
   return (
@@ -65,6 +66,7 @@ export default function SiteFooter() {
               <a href="/datenschutz" className="text-white/50 text-sm hover:text-[#D4C6A6] transition-colors">
                 Datenschutz
               </a>
+              <CookieEinstellungenLink className="text-white/50 text-sm hover:text-[#D4C6A6] transition-colors" />
               <a href="/jobs" className="text-white/50 text-sm hover:text-[#D4C6A6] transition-colors">
                 Jobs
               </a>
