@@ -6,6 +6,8 @@ import GlobalFloatingCtas from "@/components/GlobalFloatingCtas"
 import ExitIntentHint from "@/components/ExitIntentHint"
 import KlickTracking from "@/components/KlickTracking"
 import AttributionTracker from "@/components/AttributionTracker"
+import CookieBanner from "@/components/CookieBanner"
+import { CONSENT_VERSION } from "@/lib/consent"
 import "./globals.css"
 
 const inter = Inter({
@@ -44,137 +46,44 @@ export default function RootLayout({
   return (
     <html lang="de" className={inter.variable}>
       <head>
-        {/* Only load tracking scripts on production domains, not on preview domains */}
+        {/* Tracking nur im Production-Build. Consent Mode v2: Default „denied“ VOR allen Tags.
+            Eigene Einwilligung (Cookie db_consent, siehe lib/consent.ts) ersetzt Cookiebot:
+            liegt schon eine Auswahl vor, wird Consent Mode hier sofort aktualisiert.
+            Die Dienste selbst (GTM, Google Ads, Meta-Pixel, HubSpot) lädt erst
+            components/CookieBanner.tsx nach Einwilligung (lib/consent-dienste.ts). */}
         {process.env.NODE_ENV === "production" && (
-          <>
-            {/* Google Consent Mode v2 – Default denied VOR allen Tags; Update via Cookiebot-Events.
-                Hinweis: Cookiebot läuft mit data-blockingmode="auto" (blockt Tags bis Consent).
-                Falls im Cookiebot-Dashboard „Google Consent Mode" aktiv ist, diesen Default dort
-                deaktivieren ODER hier entfernen (sonst doppelter Default). Siehe PR-Beschreibung. */}
-            <Script
-              id="consent-default"
-              strategy="beforeInteractive"
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('consent','default',{
-                    ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',
-                    analytics_storage:'denied',wait_for_update:500
-                  });
-                  window.addEventListener('CookiebotOnAccept',function(){
-                    var c=(window.Cookiebot&&window.Cookiebot.consent)||{};
-                    gtag('consent','update',{
-                      ad_storage:c.marketing?'granted':'denied',
-                      ad_user_data:c.marketing?'granted':'denied',
-                      ad_personalization:c.marketing?'granted':'denied',
-                      analytics_storage:c.statistics?'granted':'denied'
-                    });
-                  });
-                  window.addEventListener('CookiebotOnDecline',function(){
-                    gtag('consent','update',{
-                      ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'
-                    });
-                  });
-                `,
-              }}
-            />
-
-            {/* Cookiebot - DSGVO-konformer Cookie Consent - MUSS ZUERST GELADEN WERDEN */}
-            <Script
-              id="Cookiebot"
-              src="https://consent.cookiebot.com/uc.js"
-              data-cbid="7e6107a2-00b0-4c25-8ffd-482c67cefdad"
-              data-blockingmode="auto"
-              data-consentmode="disabled"
-              type="text/javascript"
-              strategy="beforeInteractive"
-            />
-
-            {/* Google Tag Manager - blockiert durch Cookiebot bis Marketing-Zustimmung */}
-            <Script
-              id="gtm-head"
-              strategy="beforeInteractive"
-              data-cookieconsent="marketing"
-              dangerouslySetInnerHTML={{
-                __html: `
-                  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-                  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-                  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-                  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-                  })(window,document,'script','dataLayer','GTM-KGB529BZ');
-                `,
-              }}
-            />
-
-            {/* Google Tag (gtag.js) - blockiert durch Cookiebot bis Marketing-Zustimmung */}
-            <Script
-              src="https://www.googletagmanager.com/gtag/js?id=AW-17270753092"
-              strategy="afterInteractive"
-              data-cookieconsent="marketing"
-            />
-            <Script
-              id="gtag-config"
-              strategy="afterInteractive"
-              data-cookieconsent="marketing"
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', 'AW-17270753092');
-                `,
-              }}
-            />
-
-            {/* Meta Pixel - blockiert durch Cookiebot bis Marketing-Zustimmung */}
-            <Script
-              id="meta-pixel"
-              strategy="afterInteractive"
-              data-cookieconsent="marketing"
-              dangerouslySetInnerHTML={{
-                __html: `
-                  !function(f,b,e,v,n,t,s)
-                  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-                  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-                  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-                  n.queue=[];t=b.createElement(e);t.async=!0;
-                  t.src=v;s=b.getElementsByTagName(e)[0];
-                  s.parentNode.insertBefore(t,s)}(window, document,'script',
-                  'https://connect.facebook.net/en_US/fbevents.js');
-                  fbq('init', '1556322352741442');
-                  fbq('track', 'PageView');
-                `,
-              }}
-            />
-          </>
+          <Script
+            id="consent-default"
+            strategy="beforeInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                window.gtag = gtag;
+                window.__dbTracking = true;
+                gtag('consent','default',{
+                  ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',
+                  analytics_storage:'denied',wait_for_update:500
+                });
+                try {
+                  var m = document.cookie.match(/(?:^|; )db_consent=([^;]*)/);
+                  if (m) {
+                    var c = JSON.parse(decodeURIComponent(m[1]));
+                    if (c && c.version === ${CONSENT_VERSION}) {
+                      var g = c.marketing === true ? 'granted' : 'denied';
+                      gtag('consent','update',{
+                        ad_storage:g,ad_user_data:g,ad_personalization:g,
+                        analytics_storage:c.statistik === true ? 'granted' : 'denied'
+                      });
+                    }
+                  }
+                } catch (e) {}
+              `,
+            }}
+          />
         )}
       </head>
       <body className={`${inter.className} m-0 p-0 min-h-screen bg-[rgb(180,177,170)] font-sans antialiased`}>
-        {/* Google Tag Manager (noscript) - Only in production */}
-        {process.env.NODE_ENV === "production" && (
-          <noscript>
-            <iframe
-              src="https://www.googletagmanager.com/ns.html?id=GTM-KGB529BZ"
-              height="0"
-              width="0"
-              style={{ display: "none", visibility: "hidden" }}
-            />
-          </noscript>
-        )}
-        {/* Meta Pixel (noscript) - Only in production */}
-        {process.env.NODE_ENV === "production" && (
-          <noscript>
-            <img
-              height="1"
-              width="1"
-              style={{ display: "none" }}
-              src="https://www.facebook.com/tr?id=1556322352741442&ev=PageView&noscript=1"
-              alt=""
-            />
-          </noscript>
-        )}
-        {/* End Google Tag Manager (noscript) */}
 <meta name="google-site-verification" content="t0BF1OoHWoyvYxz3cXtyV0-n227wC3d2Lc9KTcBh6ak" />
         {/* Main Content */}
         {children}
@@ -183,17 +92,7 @@ export default function RootLayout({
         <KlickTracking />
         <AttributionTracker />
 
-        {/* HubSpot Tracking - blockiert durch Cookiebot bis Marketing-Zustimmung - Only in production */}
-        {process.env.NODE_ENV === "production" && (
-          <Script
-            id="hs-script-loader"
-            src="//js-eu1.hs-scripts.com/146440145.js"
-            strategy="afterInteractive"
-            data-cookieconsent="marketing"
-            async
-            defer
-          />
-        )}
+        <CookieBanner />
       </body>
     </html>
   )

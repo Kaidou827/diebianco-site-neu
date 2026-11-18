@@ -8,12 +8,14 @@
  *    Landingpage und document.referrer ZUERST NUR IM ARBEITSSPEICHER gehalten
  *    (Modul-Variable). Das übersteht die Client-Navigation in Next.js (Root-
  *    Layout bleibt gemountet), OHNE etwas auf dem Gerät zu speichern.
- *  - In sessionStorage wird NUR nach Cookiebot-Marketing-Zustimmung gespiegelt
+ *  - In sessionStorage wird NUR nach Marketing-Einwilligung (lib/consent.ts) gespiegelt
  *    (persistIfConsent / bei Erfassung, falls Consent schon vorliegt).
  *  - First-Touch: vorhandene Werte werden nie überschrieben.
  * Reine Client-Logik (window), SSR-sicher (no-ops ohne window).
  * ─────────────────────────────────────────────────────────────────────────
  */
+
+import { hatMarketingZustimmung } from "./consent"
 
 const URL_KEYS = [
   "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term",
@@ -30,8 +32,7 @@ let speicher: Record<string, string> | null = null
 
 function marketingConsent(): boolean {
   try {
-    const cb = (window as unknown as { Cookiebot?: { consent?: { marketing?: boolean } } }).Cookiebot
-    return Boolean(cb?.consent?.marketing)
+    return hatMarketingZustimmung()
   } catch {
     return false
   }
@@ -76,7 +77,7 @@ export function erfasseFirstTouch(): void {
   persistiere()
 }
 
-/** Bei Cookiebot-Zustimmung aufrufen → im Speicher Gehaltenes jetzt spiegeln. */
+/** Bei Einwilligung aufrufen → im Speicher Gehaltenes jetzt spiegeln. */
 export function persistIfConsent(): void {
   if (typeof window === "undefined") return
   persistiere()

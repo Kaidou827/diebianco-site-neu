@@ -5,14 +5,16 @@
  * - pushDataLayer: GTM-dataLayer-Event
  * - neueEventId: eventID für Pixel↔CAPI-Dedup
  * - feuereMetaEventMitRetry: Pixel-Event robust gegen fehlendes/verspätetes fbq
- *   (Cookiebot/Consent) – sofort, sonst bis 10 s alle 250 ms + bei
- *   "CookiebotOnAccept", genau EINMAL. Gleiche Logik wie components/jobs/DankeTracking.
+ *   (Consent) – sofort, sonst bis 10 s alle 250 ms + bei Einwilligung
+ *   (Event "db:consent", auch später), genau EINMAL. Gleiche Logik wie components/jobs/DankeTracking.
  * Alle Funktionen sind no-ops ohne window (SSR-sicher).
  * ─────────────────────────────────────────────────────────────────────────
  */
 
 type Fbq = (...args: unknown[]) => void
 type TrackingWindow = { dataLayer?: unknown[]; fbq?: Fbq }
+
+import { CONSENT_EVENT } from "./consent"
 
 const RETRY_INTERVAL_MS = 250
 const MAX_WARTEZEIT_MS = 10_000
@@ -46,10 +48,13 @@ export function feuereMetaEventMitRetry(
   let intervalId: ReturnType<typeof setInterval> | undefined
   let timeoutId: ReturnType<typeof setTimeout> | undefined
 
-  function aufraeumen() {
+  function pollenStoppen() {
     if (intervalId !== undefined) clearInterval(intervalId)
     if (timeoutId !== undefined) clearTimeout(timeoutId)
-    window.removeEventListener("CookiebotOnAccept", onConsent)
+  }
+  function aufraeumen() {
+    pollenStoppen()
+    window.removeEventListener(CONSENT_EVENT, onConsent)
   }
   function onConsent() {
     feuern()
@@ -66,8 +71,9 @@ export function feuereMetaEventMitRetry(
 
   if (!feuern()) {
     intervalId = setInterval(feuern, RETRY_INTERVAL_MS)
-    timeoutId = setTimeout(aufraeumen, MAX_WARTEZEIT_MS)
-    window.addEventListener("CookiebotOnAccept", onConsent)
+    // Nach 10 s nur das Pollen beenden; auf eine spätere Einwilligung weiter hören.
+    timeoutId = setTimeout(pollenStoppen, MAX_WARTEZEIT_MS)
+    window.addEventListener(CONSENT_EVENT, onConsent)
   }
   return aufraeumen
 }
