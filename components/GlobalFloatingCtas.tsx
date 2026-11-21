@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation"
 export default function GlobalFloatingCtas() {
   const pathname = usePathname()
   // Landingpages mit eigener Sticky-Bar (KontaktStickyBar) → globale hier ausblenden.
-  const eigeneCtaSeiten = ["/kontakt", "/grey-blending-krefeld", "/grey-blending-beratung"]
+  const eigeneCtaSeiten = ["/kontakt", "/grey-blending-krefeld", "/grey-blending-beratung", "/balayage-krefeld"]
   // Auf den Jobs-Seiten stört der Salon-CTA – die haben ihre eigene „Jetzt bewerben"-Bar.
   if (eigeneCtaSeiten.includes(pathname) || pathname.startsWith("/jobs")) return null
 
