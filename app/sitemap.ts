@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // /ergebnisse ist vorübergehend offline (Neuaufbau) – daher nicht in der Sitemap.
     { url: `${baseUrl}/grey-blending-beratung`, priority: 0.9 },
     { url: `${baseUrl}/grey-blending-krefeld`, priority: 0.9 },
+    { url: `${baseUrl}/balayage-krefeld`, priority: 0.9 },
     { url: `${baseUrl}/impressum`, priority: 0.5 },
     { url: `${baseUrl}/datenschutz`, priority: 0.5 },
     { url: `${baseUrl}/mentoring`, priority: 0.6 },
