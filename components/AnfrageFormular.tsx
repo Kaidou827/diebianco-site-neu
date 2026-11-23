@@ -508,7 +508,7 @@ export default function AnfrageFormular({
             </span>
             <span className="db-rating">
               <Sterne />
-              <strong>5,0</strong> · 37 bei Google
+              <strong>5,0</strong> · 51 bei Google
             </span>
           </div>
           {zeigeFortschritt && (
