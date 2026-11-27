@@ -64,7 +64,6 @@ Du hast es eilig oder eine kurze Frage? Am schnellsten erreichst du uns per What
    (Text-Version: nackter Link https://wa.me/491743091973?text=… mit vorformuliertem Text)
 
 Dein Wunschzeitraum: {Zeitraum}.        (nur wenn ein Zeitraum gewählt wurde)
-   (bei „Samstag" zusätzlich: „Samstags öffnen wir schon um 7 Uhr.")
 
 Zur Orientierung – unsere ab-Preise:     (nur wenn MAIL_PREISE_ANZEIGEN = true)
 – Damenschnitt ab 80 €
@@ -78,7 +77,7 @@ Alle Angaben sind ab-Preise.
 So findest du uns:
 Siedlung Egelsberg 1, 47802 Krefeld
 Karte: {Google-Maps-Link}
-Mo–Fr 9–17 Uhr · Sa 7–14 Uhr · nur mit Termin
+Mo–Sa 8–17 Uhr · nur mit Termin   (aus lib/site-info.ts → oeffnungszeitenEinzeilig)
 Telefon: +49 174 3091973
 
 Behandlungen & Preise: {Website}/behandlungen-preise

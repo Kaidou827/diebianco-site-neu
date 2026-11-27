@@ -14,32 +14,34 @@ export type OpeningHourEntry = {
 
 // Einzeltage (z. B. für den Footer).
 export const openingHours: OpeningHourEntry[] = [
-  { day: "Montag", hours: "09:00–17:00" },
-  { day: "Dienstag", hours: "09:00–17:00" },
-  { day: "Mittwoch", hours: "09:00–17:00" },
-  { day: "Donnerstag", hours: "09:00–17:00" },
-  { day: "Freitag", hours: "09:00–17:00" },
-  { day: "Samstag", hours: "07:00–14:00" },
+  { day: "Montag", hours: "08:00–17:00" },
+  { day: "Dienstag", hours: "08:00–17:00" },
+  { day: "Mittwoch", hours: "08:00–17:00" },
+  { day: "Donnerstag", hours: "08:00–17:00" },
+  { day: "Freitag", hours: "08:00–17:00" },
+  { day: "Samstag", hours: "08:00–17:00" },
   { day: "Sonntag", hours: "Geschlossen" },
 ]
 
 // Kompakte, gruppierte Anzeige (Kontaktinfo, Formular-Hinweis).
 export const oeffnungszeitenKompakt: string[] = [
-  "Mo–Fr: 09:00–17:00 Uhr",
-  "Sa: 07:00–14:00 Uhr",
+  "Mo–Sa: 08:00–17:00 Uhr",
   "So: geschlossen",
 ]
+
+// Einzeilig für E-Mails (Eingangsbestätigung).
+export const oeffnungszeitenEinzeilig = "Mo–Sa 8–17 Uhr · nur mit Termin"
 
 // Maschinen-lesbar für die Zeitsteuerung. Wochentag-Index (0 = So … 6 = Sa)
 // → [Öffnen, Schließen] in "HH:MM", oder null = geschlossen.
 const ZEITFENSTER: Record<number, [string, string] | null> = {
   0: null, // Sonntag
-  1: ["09:00", "17:00"], // Montag
-  2: ["09:00", "17:00"], // Dienstag
-  3: ["09:00", "17:00"], // Mittwoch
-  4: ["09:00", "17:00"], // Donnerstag
-  5: ["09:00", "17:00"], // Freitag
-  6: ["07:00", "14:00"], // Samstag
+  1: ["08:00", "17:00"], // Montag
+  2: ["08:00", "17:00"], // Dienstag
+  3: ["08:00", "17:00"], // Mittwoch
+  4: ["08:00", "17:00"], // Donnerstag
+  5: ["08:00", "17:00"], // Freitag
+  6: ["08:00", "17:00"], // Samstag
 }
 
 const WOCHENTAG_INDEX: Record<string, number> = {
