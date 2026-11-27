@@ -12,7 +12,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  */
 
-import { salonTelefon, salonTelefonHref, salonEmail, salonAdresse } from "@/lib/site-info"
+import { salonTelefon, salonTelefonHref, salonEmail, salonAdresse, oeffnungszeitenEinzeilig } from "@/lib/site-info"
 import { behandlungLabel, zeitraumLabel } from "@/lib/lead-logic"
 import { waSalonFrageLink } from "@/lib/whatsapp"
 import { PREIS_KLAUSEL_TEXT } from "@/lib/preistexte"
@@ -170,7 +170,7 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
     : "deine Anfrage ist bei uns angekommen."
 
   const zeitraumSatz = zeitraum
-    ? `Dein Wunschzeitraum: ${zeitraum}.${d.wunschzeitraum === "samstag" ? " Samstags öffnen wir schon um 7 Uhr." : ""}`
+    ? `Dein Wunschzeitraum: ${zeitraum}.`
     : ""
 
   const adresse = `${salonAdresse.strasse}, ${salonAdresse.ort}`
@@ -194,7 +194,7 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
     "So findest du uns:",
     `${adresse}`,
     `Karte: ${MAPS_URL}`,
-    "Mo–Fr 9–17 Uhr · Sa 7–14 Uhr · nur mit Termin",
+    oeffnungszeitenEinzeilig,
     `Telefon: ${salonTelefon}`,
     "",
     `Behandlungen & Preise: ${SITE}/behandlungen-preise`,
@@ -228,7 +228,7 @@ export function eingangsbestaetigung(d: BestaetigungDaten): EmailInhalt {
   <p style="margin:0 0 4px">
     <a href="${esc(MAPS_URL)}" style="color:#B8863D">${esc(adresse)}</a>
   </p>
-  <p style="margin:0 0 4px;color:#8a7d6a">Mo–Fr 9–17 Uhr · Sa 7–14 Uhr · nur mit Termin</p>
+  <p style="margin:0 0 4px;color:#8a7d6a">${esc(oeffnungszeitenEinzeilig)}</p>
   <p style="margin:0 0 16px">Telefon: <a href="${esc(salonTelefonHref)}" style="color:#B8863D">${esc(salonTelefon)}</a></p>
 
   <p style="margin:0 0 20px">
